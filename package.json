@@ -1,0 +1,14 @@
+{
+  "name": "trefactor",
+  "version": "1.0.0",
+  "description": "A lot of huge applications today are built with Angular",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jscodeshift": "^0.3.18"
+  }
+}
