@@ -1,8 +1,12 @@
-import { isAngularDependencyDefinition } from '../angular-types'
+import path from 'path';
+import fs from 'fs';
+import { isAngularDependencyDefinition } from '../angular-types';
+import { serializeDependency } from '../helpers/files.js';
 
 export default function transformer(file, api) {
   const j = api.jscodeshift;
   const {expression, statement, statements} = j.template;
+  const depTmp = path.resolve(__dirname, '..', 'tmp/dependencies');
 
   function parseDefinition({expression: e}) {
     const module = e.callee.object.arguments[0].value;
@@ -15,29 +19,15 @@ export default function transformer(file, api) {
 
   function saveDependencyDefinition(p) {
     const { module, type, name  } = parseDefinition(p.value);
-    const definition = {
-      [module]: {
-        [type]: {
-          [name]: file.path
-        }
-      }
-    };
 
-    var currentFile = {};
-
-    if (!currentFile[module]) {
-      currentFile[module] = {};
-    }
-    if (!currentFile[module][type]) {
-      currentFile[module][type] = {};
-    }
-
-    currentFile[module][type][name] = file.path;
+    const dependency = serializeDependency({ module, type, name, path: path.resolve(file.path) })
+    fs.appendFile(depTmp, dependency + '\n', (err) => {
+      if (err) throw err;
+    });
   }
 
   function toExport(p) {
     const { definition  } = parseDefinition(p.value);
-    console.log(definition);
     j(p).replaceWith(j.expressionStatement(j.assignmentExpression(
       '=',
       j.memberExpression(j.identifier('module'), j.identifier('exports')),
