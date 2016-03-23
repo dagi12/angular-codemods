@@ -26,10 +26,12 @@ export function flattenTree(tree) {
   }, []);
 }
 
+export function serializeDependency({ module, type, name, path }) {
+  return `${module}:${type}:${name}:${path}`;
+}
+
 export function serializeTree(tree) {
-  return flattenTree(tree).map(({ module, type, name, path }) => {
-    return `${module}:${type}:${name}:${path}`;
-  }).join('\n');
+  return flattenTree(tree).map(serializeDependency).join('\n');
 }
 
 export function addToTree(tree, { module, type, name, path }) {
