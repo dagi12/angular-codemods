@@ -13,27 +13,27 @@ describe('Helpers', () => {
       'test_module:factory:first_factory:/test/factory.js\n' +
       'test_module:directive:third_directive:/test/directive3.js';
 
-      const testTree = {
-        'test_module': {
-          'directive': {
-            'first_directive': '/test/directive.js',
-            'third_directive': '/test/directive3.js',
-          },
-          'factory': {
-            'first_factory': '/test/factory.js',
-          },
+    const testTree = {
+      'test_module': {
+        'directive': {
+          'first_directive': '/test/directive.js',
+          'third_directive': '/test/directive3.js',
         },
-        'test2_module': {
-          'directive': {
-            'second_directive': '/test/directive2.js',
-          },
+        'factory': {
+          'first_factory': '/test/factory.js',
         },
-      };
+      },
+      'test2_module': {
+        'directive': {
+          'second_directive': '/test/directive2.js',
+        },
+      },
+    };
 
-      describe('loadData(data)', () => {
+    describe('loadData(data)', () => {
 
-        it('should create the corresponding array', () => {
-          expect(Files.loadData(testData)).to.deep.equal(testTree);
+      it('should create the corresponding array', () => {
+        expect(Files.loadData(testData)).to.deep.equal(testTree);
       });
 
     });
@@ -49,6 +49,18 @@ describe('Helpers', () => {
         ]);
       });
 
+    });
+
+    describe('serializeTree(tree)', () => {
+
+      it('should write each dependency on a new line in the form module:type:name:path', () => {
+        const serializedLines = Files.serializeTree(testTree).split('\n');
+
+        expect(serializedLines.length).to.equal(4);
+
+        // Every line in testData is present in serialized result
+        expect(testData.split('\n').every(line => serializedLines.indexOf(line) !== -1)).to.be.true;
+      });
     });
 
   });

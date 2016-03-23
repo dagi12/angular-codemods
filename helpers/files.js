@@ -25,3 +25,9 @@ export function flattenTree(tree) {
     }, []));
   }, []);
 }
+
+export function serializeTree(tree) {
+  return flattenTree(tree).map(({ module, type, name, path }) => {
+    return `${module}:${type}:${name}:${path}`;
+  }).join('\n');
+}
