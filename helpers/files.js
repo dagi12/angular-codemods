@@ -31,3 +31,13 @@ export function serializeTree(tree) {
     return `${module}:${type}:${name}:${path}`;
   }).join('\n');
 }
+
+export function addToTree(tree, { module, type, name, path }) {
+  return deepAssign(tree, {
+    [module]: {
+      [type]: {
+        [name]: path,
+      },
+    },
+  });
+}

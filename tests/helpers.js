@@ -63,6 +63,29 @@ describe('Helpers', () => {
       });
     });
 
+    describe('addToTree(tree, { module, type, name, path)', () => {
+
+      it('should return a tree including the module, from an empty tree', () => {
+        const expectation = {
+          module: {
+            type: {
+              name: 'path',
+            },
+          },
+        };
+
+        const dependency = {
+          module: 'module',
+          type: 'type',
+          name: 'name',
+          path: 'path',
+        };
+
+        expect(Files.addToTree({}, dependency)).to.deep.equal(expectation);
+      });
+
+    });
+
   });
 
 });
