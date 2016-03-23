@@ -15,3 +15,13 @@ export function loadData(data) {
     });
   }, {});
 }
+
+export function flattenTree(tree) {
+  return Object.keys(tree).reduce((flat, module) => {
+    return flat.concat( Object.keys(tree[module]).reduce((types, type) => {
+      return types.concat(Object.keys(tree[module][type]).map(name => {
+        return { module, type, name, path: tree[module][type][name] };
+      }));
+    }, []));
+  }, []);
+}
