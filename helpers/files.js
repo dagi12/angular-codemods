@@ -1,7 +1,6 @@
 import deepAssign from 'deep-assign';
 
 export function loadData(data) {
-  console.log('YO', data);
   const lines = data.split('\n');
 
   return lines.reduce((obj, line) => {

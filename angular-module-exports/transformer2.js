@@ -1,4 +1,7 @@
-import { isAngularModuleDefinition } from '../angular-types'
+import path from 'path';
+import fs from 'fs';
+import { isAngularModuleDefinition } from '../angular-types';
+import { loadData, flattenTree } from '../helpers/files';
 
 export default function transformer(file, api) {
   const j = api.jscodeshift;
@@ -19,14 +22,14 @@ export default function transformer(file, api) {
     return angularDependencyDefinitions(angularDependencyDefinition(parentCall, definition), rest);
   }
 
+  const filePath = path.resolve(__dirname, '../tmp/dependencies');
+  const dependenciesFile = fs.readFileSync(filePath, { encoding: 'utf8' });
+  const tree = loadData(dependenciesFile);
+  const definitions = flattenTree(tree);
   return j(file.source)
   .find(j.CallExpression, isAngularModuleDefinition)
   .replaceWith(p => {
     const parentCall = j(p).get().value;
-    const definitions = [
-      { module: 'test_module', type: 'directive', name: 'test_directive', path: '/test/directive.js' },
-      { module: 'test_module', type: 'factory', name: 'test_factory', path: '/test/factory.js' },
-    ];
 
     return angularDependencyDefinitions(parentCall, definitions);
   })
