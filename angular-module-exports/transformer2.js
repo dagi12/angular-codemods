@@ -26,12 +26,14 @@ export default function transformer(file, api) {
   const dependenciesFile = fs.readFileSync(filePath, { encoding: 'utf8' });
   const tree = loadData(dependenciesFile);
   const definitions = flattenTree(tree);
+
   return j(file.source)
   .find(j.CallExpression, isAngularModuleDefinition)
   .replaceWith(p => {
     const parentCall = j(p).get().value;
+    const module = p.value.arguments[0].value;
 
-    return angularDependencyDefinitions(parentCall, definitions);
+    return angularDependencyDefinitions(parentCall, definitions.filter(d => d.module === module));
   })
   .toSource({ wrapColumn: true });
 };
