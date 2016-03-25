@@ -1,5 +1,5 @@
 export function isAngularModuleCallee(p) {
-  if (!p) {
+  if (!p || !p.property) {
     return false;
   }
 
