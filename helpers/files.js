@@ -1,10 +1,15 @@
 import deepAssign from 'deep-assign';
 
 export function loadData(data) {
+  console.log('YO', data);
   const lines = data.split('\n');
 
   return lines.reduce((obj, line) => {
     const [ module, type, name, path ] = line.split(':');
+
+    if (!path) {
+      return obj;
+    }
 
     return deepAssign({}, obj, {
       [module]: {

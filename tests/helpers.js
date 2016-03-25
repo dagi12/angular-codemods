@@ -36,6 +36,19 @@ describe('Helpers', () => {
         expect(Files.loadData(testData)).to.deep.equal(testTree);
       });
 
+      it('should exclude non-valid lines', () => {
+        const data = 'test_module:directive:test_directive:/test/directive.js\n\n' +
+          'test_module:directive:/test/no.js';
+
+        expect(Files.loadData(data)).to.deep.equal({
+          test_module: {
+            directive: {
+              test_directive: '/test/directive.js'
+            }
+          }
+        });
+      });
+
     });
 
     describe('flattenTree(tree)', () => {
