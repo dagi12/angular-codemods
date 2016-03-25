@@ -4,7 +4,8 @@
   "description": "A lot of huge applications today are built with Angular",
   "main": "index.js",
   "scripts": {
-    "test": "mocha ./tests/"
+    "test": "mocha ./tests/",
+    "transform-modules": "jscodeshift -t ./angular-module-exports/transformer.js ./angular-module-exports/examples/basic; jscodeshift -t ./angular-module-exports/transformer2.js ./angular-module-exports/examples/basic -c 1"
   },
   "author": "",
   "license": "ISC",
