@@ -7,7 +7,8 @@ export function isAngularModuleCallee(p) {
 }
 
 export function isAngularModuleGetter(p) {
-  return p.type === 'CallExpression' && isAngularModuleCallee(p.callee)
+  return p && p.type === 'CallExpression'
+    && isAngularModuleCallee(p.callee)
     && p.arguments.length === 1;
 }
 

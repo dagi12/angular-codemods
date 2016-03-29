@@ -28,10 +28,12 @@ export default function transformer(file, api) {
 
   function toExport(p) {
     const { definition  } = parseDefinition(p.value);
+
     j(p).replaceWith(j.expressionStatement(j.assignmentExpression(
       '=',
       j.memberExpression(j.identifier('module'), j.identifier('exports')),
-      j.functionExpression(null, definition.params, definition.body)
+      definition
+      //j.functionExpression(null, definition.params, definition.body)
     )));
   }
 
