@@ -1,0 +1,8 @@
+{
+  "files.autoSave": "afterDelay",
+  "editor.fontSize": 11,
+  "editor.tabSize": 2,
+  "npm.packageManager": "yarn",
+  "eslint.packageManager": "yarn",
+  "tslint.packageManager": "yarn"
+}

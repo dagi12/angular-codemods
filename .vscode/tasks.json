@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "test",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "label": "npm: test",
+      "detail": "mocha ./tests/"
+    },
+    {
+      "type": "npm",
+      "script": "transform-modules",
+      "problemMatcher": [],
+      "label": "npm: transform-modules",
+      "detail": "jscodeshift -t ./angular-module-exports/transformer.js ./angular-module-exports/examples/basic; jscodeshift -t ./angular-module-exports/transformer2.js ./angular-module-exports/examples/basic -c 1"
+    },
+    {
+      "type": "npm",
+      "script": "directive-transform",
+      "problemMatcher": ["$tsc"],
+      "label": "npm: directive-transform",
+      "detail": "jscodeshift -p -t ./angular-module-exports/directive-transformer.js ./angular-module-exports/examples/user-rights-checkboxes.directive.ts"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "outDir": "build/resources/main",
+    "lib": ["es2017", "dom"],
+    "typeRoots": ["node_modules/@types"],
+    "allowJs": true,
+    "baseUrl": "./",
+    "importHelpers": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "angular-module-exports/**/*.js",
+    "angular-module-exports/directive-transformer.ts"
+  ],
+  "exclude": ["node_modules", "angular-module-exports/examples/**/*.ts"]
+}
