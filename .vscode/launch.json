@@ -5,14 +5,28 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Transform tutorial",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
+      "args": [
+        "-d",
+        "-p",
+        "-t",
+        "${fileDirname}/${fileBasenameNoExtension}.ts",
+        "${fileDirname}/${fileBasenameNoExtension}.task.js",
+        "${fileDirname}/${fileBasenameNoExtension}.solution.js"
+      ],
+      "outputCapture": "std"
+    },
+    {
       "name": "directive-transform",
       "request": "launch",
       "runtimeArgs": ["run-script", "directive-transform"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "pwa-node",
-      "outputCapture": "std",
-      "console": "integratedTerminal"
+      "outputCapture": "std"
     },
     {
       "name": "Launch via NPM",

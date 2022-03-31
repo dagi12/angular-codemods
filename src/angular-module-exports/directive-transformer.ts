@@ -1,5 +1,4 @@
-import { NodePath } from './../node_modules/ast-types/lib/node-path.d';
-import { API, Collection, FileInfo, FunctionDeclaration, FunctionExpression } from 'jscodeshift';
+import { API, Collection, FileInfo, FunctionDeclaration } from 'jscodeshift';
 
 export const parser = "babel";
 
@@ -24,22 +23,30 @@ export default function transformer(file: FileInfo, api: API) {
   // Znajdź isolated scope
   const scopeDeclaration =
     directiveBlock
-      .find(j.Property, path => path.value === j.identifier('scope'))
+      .find(j.Property, (path: any) => {
+        return path.key && path.key.name === 'scope';
+      })
 
   // Znajdź link function
   const linkFn = directiveBlock
-    .find(j.Property, path => path.value === j.identifier('link'))
+    .find(j.Property, (path: any) => {
+      return path.key && path.key.name === 'link';
+    })
 
   // Znajdź controller
   const ctrlFn = directiveBlock
-    .find(j.Property, path => path.value === j.identifier('controller'))
+    .find(j.Property, (path: any) => {
+      return path.key && path.key.name === 'controller';
+    })
 
   // Znajdź template
   const template = directiveBlock
-    .find(j.Property, path => path.value === j.identifier('template'))
+    .find(j.Property, (path: any) => {
+      return path.key && path.key.name === 'template';
+    })
 
   // Zgrupuj funkcję
-  const linkFn.find(j.FunctionDeclaration).at(0)
+  const fnDeclarationInLink = linkFn.find(j.FunctionDeclaration)
   const memberFns = linkFn.find(j.AssignmentExpression, {
     left: {
       type: "MemberExpression"
@@ -58,9 +65,7 @@ export default function transformer(file: FileInfo, api: API) {
   });
 
   // Zgrupuj zwykłe expression
-  const newVariableName = linkFn.at(0);
-
-  newVariableName.nodes
+  const newVariableName = linkFn;
 
   // Znajdź controller
   // Zgrupuj dependency

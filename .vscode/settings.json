@@ -1,8 +1,15 @@
 {
   "files.autoSave": "afterDelay",
-  "editor.fontSize": 11,
+  "editor.fontSize": 12,
   "editor.tabSize": 2,
   "npm.packageManager": "yarn",
   "eslint.packageManager": "yarn",
-  "tslint.packageManager": "yarn"
+  "tslint.packageManager": "yarn",
+  "editor.minimap.enabled": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true
 }

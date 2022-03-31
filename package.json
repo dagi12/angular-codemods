@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha ./tests/",
     "transform-modules": "jscodeshift -t ./angular-module-exports/transformer.js ./angular-module-exports/examples/basic; jscodeshift -t ./angular-module-exports/transformer2.js ./angular-module-exports/examples/basic -c 1",
-    "directive-transform": "jscodeshift -p -t ./angular-module-exports/directive-transformer.js ./angular-module-exports/examples/user-rights-checkboxes.directive.ts"
+    "directive-transform": "jscodeshift -p -t ./angular-module-exports/directive-transformer.ts ./angular-module-exports/examples/user-rights-checkboxes.directive.ts"
   },
   "author": "",
   "license": "ISC",

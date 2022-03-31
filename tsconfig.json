@@ -22,9 +22,11 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true
   },
-  "include": [
-    "angular-module-exports/**/*.js",
-    "angular-module-exports/directive-transformer.ts"
-  ],
-  "exclude": ["node_modules", "angular-module-exports/examples/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "src/**/*.js",
+    "src/**/*.out.*",
+    "src/**/*.task.*"
+  ]
 }
