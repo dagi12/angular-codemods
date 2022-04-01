@@ -1,0 +1,35 @@
+<div class="form-group row mb-2">
+  <label class="col-form-label col-md-4 col-lg-3 {{customLabelStyle}}" for="{{ id }}"
+    >{{ label }}</label
+  >
+  <div class="col-md-6 {{customStyle}}">
+    <input
+      autocomplete="off"
+      class="form-control"
+      id="{{ id }}"
+      ng-blur="clearAutocomplete($event)"
+      ng-disabled="ngDisabled"
+      ng-if="ngIfInside"
+      ng-model="controller.ngModel"
+      ng-model-options="modelOptions"
+      placeholder="{{ placeholder }}"
+      type="text"
+      typeahead-input-formatter="resultItemTextDirectiveMethod($model)"
+      typeahead-loading="controller.loadingAutoComplete"
+      typeahead-min-length="2"
+      typeahead-on-select="typeAheadOnSelect($item, $model)"
+      typeahead-wait-ms="400"
+      uib-typeahead="item as itemTextDirectiveMethod(item) for item in querySearchDirectiveMethod($viewValue)"
+    />
+    <button
+      aria-label="Clear"
+      class="no-bg clear-button"
+      ng-click="clearAutocompleteWithSelected()"
+      ng-if="!ngDisabled && controller.ngModel && !hideButton"
+      type="button"
+    >
+      <i aria-hidden="true" class="fa fa-close"></i>
+    </button>
+    <div ng-transclude></div>
+  </div>
+</div>

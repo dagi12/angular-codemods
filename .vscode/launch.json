@@ -31,7 +31,7 @@
         "src/my-transform/directive-to-component.ts",
         "--extensions=ts",
         "--parser=ts",
-        "src/my-transform/user-rights/user-rights-checkboxes.directive.in.ts"
+        "src/my-transform/my-auto-complete/my-auto-complete.directive.ts"
       ],
       "type": "pwa-node",
       "outputCapture": "std"

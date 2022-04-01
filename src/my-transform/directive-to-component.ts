@@ -1,4 +1,4 @@
-import child_process from "child_process";
+import fs from "fs";
 import {
   API,
   AssignmentExpression,
@@ -9,13 +9,15 @@ import {
   ExpressionStatement,
   FileInfo,
   FunctionDeclaration,
+  Identifier,
   JSCodeshift,
   ObjectExpression,
 } from "jscodeshift";
+import HTMLParser from "node-html-parser";
 import { createArrowFunctionExpression2 } from "../shared/build-util";
 import "../shared/collection-ext";
-import { assertOne, isDirectChildOf } from "../shared/search-util";
-import { ObjectProperty } from "./../../node_modules/.staging/@babel/types-9c30f3bb/lib/index-legacy.d";
+import { fileExists } from "../shared/fs-util";
+import { isDirectChildOf } from "../shared/search-util";
 import { collectionExt, MyCollection } from "./../shared/collection-ext";
 
 function fromDeclaration(toClassArrow: FunctionDeclaration): ClassProperty {
@@ -37,7 +39,6 @@ function fromDeclaration(toClassArrow: FunctionDeclaration): ClassProperty {
   );
 }
 
-// todo type
 function fromFunExpr(toClassArrow: any): ClassProperty {
   return j.classProperty(
     j.identifier(toClassArrow.left.property.name),
@@ -47,7 +48,6 @@ function fromFunExpr(toClassArrow: any): ClassProperty {
   );
 }
 
-// todo type
 function fromAssignmentArrow(toClassArrow: any): ClassProperty {
   return j.classProperty(
     j.identifier(toClassArrow.left.property.name),
@@ -93,15 +93,6 @@ export function allFunExpressions(parentNode: Collection) {
   return { funDeclars, memberFunExprs, memberArrowFunExprs };
 }
 
-function funExprsInBlock(parentNodePath: Collection) {
-  const linkFnBlockNodePath = parentNodePath
-    .find(j.FunctionExpression)
-    .at(0)
-    .find(j.BlockStatement);
-
-  return allFunExpressions(linkFnBlockNodePath);
-}
-
 function nonFunExpressionsInBlock(
   parentNodePath: Collection
 ): ExpressionStatement[] {
@@ -131,12 +122,12 @@ function nonFunExpressionsInBlock(
   return funsExclusions.nodes();
 }
 
-function dependenciesFromFun(nodePath: ASTPath<FunctionDeclaration>) {
-  // TODO
-  // Zgrupuj dependency
-}
-
 let j: JSCodeshift;
+
+const parentExprTypeAccessPropertyNameMap = {
+  MemberExpression: "object",
+  CallExpression: "callee",
+};
 
 export default function transformer(file: FileInfo, api: API) {
   j = api.jscodeshift;
@@ -155,22 +146,24 @@ export default function transformer(file: FileInfo, api: API) {
     .find(j.FunctionDeclaration)
     .at(0);
 
-  const directiveBlock = directiveFn
-    .find(j.BlockStatement)
-    .at(0)
+  const dependencyParams: Identifier[] = directiveFn.get(0).node.params;
+
+  const directiveOuterBlock = directiveFn.find(j.BlockStatement).at(0);
+
+  const directiveObjectBlock = directiveOuterBlock
     .find(j.ReturnStatement)
     .at(0)
     .find(j.ObjectExpression);
 
   const htmlReplaceVarNames: string[] = [];
 
-  directiveBlock
+  directiveObjectBlock
     .find(j.MemberExpression, { object: { name: "$scope" } })
     .forEach((p: any) => {
       return htmlReplaceVarNames.push(p.value.property.name);
     });
 
-  directiveBlock
+  directiveObjectBlock
     .find(j.MemberExpression, { object: { name: "scope" } })
     .forEach((p: any) => {
       const propertyName: string = p.value.property.name;
@@ -179,39 +172,71 @@ export default function transformer(file: FileInfo, api: API) {
       }
     });
 
-  const scopeProperty = directiveBlock.find(j.ObjectProperty, {
+  const scopeProperty = directiveObjectBlock.find(j.ObjectProperty, {
     key: { name: "scope" },
   });
 
-  const scopeNode = scopeProperty.at(0).get(0).node;
+  const scopeNode = scopeProperty.length
+    ? scopeProperty.get(0).node
+    : undefined;
 
-  scopeNode.value.properties.forEach((p: ObjectProperty) => {
-    const propertyName: string = p.key.name;
-    if (!htmlReplaceVarNames.includes(propertyName)) {
-      return htmlReplaceVarNames.push(propertyName);
-    }
-  });
+  const properties = scopeNode.value.properties;
+  if (properties) {
+    properties.forEach((p: any) => {
+      const propertyName: string = p.key.name;
+      if (!htmlReplaceVarNames.includes(propertyName)) {
+        return htmlReplaceVarNames.push(propertyName);
+      }
+    });
+  }
 
-  const templateNode = directiveFn
+  const tmpTemplateNode = directiveFn
     .find(j.ObjectProperty, {
       key: { name: "template" },
     })
-    .at(0)
-    .get(0).node;
+    .at(0);
 
-  const linkFn = directiveBlock.find(j.ObjectProperty, {
-    key: { name: "link" },
+  if (!tmpTemplateNode) {
+    throw new TypeError("Directive without template");
+  }
+
+  const templateNode = tmpTemplateNode.get(0).node;
+
+  const ctrlFn = directiveObjectBlock.find(j.ObjectProperty, {
+    key: { name: "controller" },
   });
 
-  assertOne(linkFn);
+  ctrlFn.get(0).node.value.params.forEach((n: Identifier) => {
+    if (n.name !== "$scope") {
+      dependencyParams.push(n);
+    }
+  });
+
+  dependencyParams.forEach((param) => {
+    directiveOuterBlock
+      .find(j.Identifier, {
+        name: param.name,
+      })
+      .replaceWith((path) => j.memberExpression(j.thisExpression(), path.node));
+  });
+
+  let linkFn = directiveObjectBlock.find(j.ObjectProperty, {
+    key: { name: "link" },
+  });
+  if (!linkFn.length) {
+    linkFn = directiveObjectBlock
+      .find(j.ObjectProperty, {
+        key: { name: "compile" },
+      })
+      .find(j.ReturnStatement)
+      .find(j.ObjectProperty, {
+        key: { name: "post" },
+      });
+  }
 
   linkFn
     .find(j.Identifier, { name: "scope" })
     .replaceWith(j.identifier("this"));
-
-  const ctrlFn = directiveBlock.find(j.ObjectProperty, {
-    key: { name: "controller" },
-  });
 
   ctrlFn
     .find(j.Identifier, { name: "$scope" })
@@ -239,11 +264,41 @@ export default function transformer(file: FileInfo, api: API) {
     ctrlFunExprs.memberArrowFunExprs.paths()
   );
 
-  const directiveName = directiveFn.get(0).node.id.name;
+  const tmpDirectiveName = directiveFn.get(0).node.id.name;
+  const directiveName =
+    tmpDirectiveName.indexOf("Directive") >= 0
+      ? tmpDirectiveName.split("Directive")[0]
+      : tmpDirectiveName;
   const compCtrlClassName: string = directiveName + "Controller";
+  const ctrorParams = dependencyParams.map((v) => {
+    const tsParam = j.tsParameterProperty(j.identifier(v.name));
+    if (!v.typeAnnotation) {
+      const typeAnnotationDepNameMap = {
+        $timeout: "ITimeoutService",
+      };
+      const typeAnn = typeAnnotationDepNameMap[v.name];
+      if (!typeAnn) {
+        throw new TypeError("Couldn't find type for " + v.name);
+      }
+      v.typeAnnotation = typeAnn;
+    }
+    tsParam.parameter = v;
+    tsParam.accessibility = "private";
+    return tsParam;
+  });
+
+  const ctor = j.methodDefinition(
+    "constructor",
+    j.identifier("constructor"),
+    j.functionExpression(null, ctrorParams, j.blockStatement([]))
+  );
+
+  ctor.comments = [j.commentBlock("@ngInject")];
+
   const compCtrlClassDec = j.classDeclaration(
     j.identifier(compCtrlClassName),
     j.classBody([
+      ctor,
       j.methodDefinition(
         "method",
         j.identifier("$onInit"),
@@ -271,11 +326,12 @@ export default function transformer(file: FileInfo, api: API) {
     j.classImplements(j.identifier("IController")),
   ];
 
-  // scope -> bindgins
-  // controller -> Utworzony wcześniej kontroler
-  // template
+  const isIsolatedScope =
+    scopeNode && scopeNode.value && typeof scopeNode.value.value !== "boolean";
   const componentDefObjectExpr: ObjectExpression = j.objectExpression([
-    j.objectProperty(j.identifier("bindings"), scopeNode.value),
+    ...(isIsolatedScope
+      ? [j.objectProperty(j.identifier("bindings"), scopeNode.value)]
+      : []),
     j.objectProperty(
       j.identifier("controller"),
       j.identifier(compCtrlClassName)
@@ -283,13 +339,15 @@ export default function transformer(file: FileInfo, api: API) {
     j.objectProperty(j.identifier("template"), templateNode.value),
   ]);
 
+  const compId = j.identifier(directiveName + "Component");
+  compId.typeAnnotation = j.typeAnnotation(
+    j.genericTypeAnnotation(j.identifier("IComponentOptions"), null)
+  );
+
   const compDef = j.exportDeclaration(
     false,
     j.variableDeclaration("const", [
-      j.variableDeclarator(
-        j.identifier(directiveName + "Component"),
-        componentDefObjectExpr
-      ),
+      j.variableDeclarator(compId, componentDefObjectExpr),
     ])
   );
 
@@ -298,33 +356,42 @@ export default function transformer(file: FileInfo, api: API) {
   directiveExport.remove();
 
   if (!!htmlReplaceVarNames.length) {
-    const inFilePath = file.path.split(".").slice(0, -2).join(".") + ".in.html";
-    const outHtmlFilePath =
-      file.path.split(".").slice(0, -2).join(".") + ".out.html";
-
-    const execCommandString =
-      'sed -E "s/(' +
-      htmlReplaceVarNames.join("|") +
-      ")/\\$ctrl.\\" +
-      '1/g" ' +
-      inFilePath +
-      " > " +
-      outHtmlFilePath;
-    child_process.exec(
-      execCommandString,
-      (error: { message: any }, stdout: any, stderr: any) => {
-        if (error) {
-          console.log(`error: ${error.message}`);
-          return;
-        }
-        if (stderr) {
-          console.log(`stderr: ${stderr}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-      }
-    );
+    replaceHtmlVariables(htmlReplaceVarNames, file.path);
   }
 
   return root.toSource();
+}
+
+function replaceHtmlVariables(tokens: string[], filePath: string) {
+  const tmpInFilePath = filePath.split(".").slice(0, -1).join(".") + ".html";
+  const tmpInFilePath2 = filePath.split(".").slice(0, -2).join(".") + ".html";
+  let htmlFilePath;
+
+  if (fileExists(tmpInFilePath)) {
+    htmlFilePath = tmpInFilePath;
+  } else if (fileExists(tmpInFilePath2)) {
+    htmlFilePath = tmpInFilePath2;
+  } else {
+    throw new Error("HTML template not found");
+  }
+  const root = HTMLParser(fs.readFileSync(htmlFilePath).toString());
+  const allElements = root.querySelectorAll("*");
+  allElements.forEach((elem) => {
+    for (let [key, value] of Object.entries(elem.attrs)) {
+      tokens.forEach((token) => {
+        if (value.includes(token)) {
+          elem.attrs[key] = replaceAll(value, token, "$ctrl." + token);
+        }
+      });
+    }
+  });
+  fs.writeFileSync(htmlFilePath, root.outerHTML);
+}
+
+function replaceAll(str: string, find: string, replace: string) {
+  return str.replace(new RegExp(escapeRegExp(find), "g"), replace);
+}
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

@@ -1,0 +1,31 @@
+<div
+  date-picker-directive
+  input-id="planned-return-date"
+  label="Data planowanego zdania"
+  ng-model="$ctrl.parent.rentcar.zdPlanData"
+  required-label="true"
+></div>
+
+<rental-place
+  label="Miejsce zdania (oddział)"
+  on-rental-place-change="$ctrl.rentalPlaceChange($event);"
+  rental-place="$ctrl.parent.rentcar.zdPlanMiejsce"
+></rental-place>
+
+<div
+  checkbox-directive
+  label="Odbiór od klienta"
+  ng-model="$ctrl.parent.zdPlanUKl"
+  yes-no-checkbox-directive
+  yes-no-model="$ctrl.parent.rentcar.zdPlanUKl"
+></div>
+
+<div ng-show="$ctrl.parent.zdPlanUKl">
+  <div
+    label="Miejsce odbioru"
+    max-length="99"
+    ng-model="$ctrl.parent.rentcar.zdPlanUKlMiejsce"
+    text-input-directive
+  ></div>
+</div>
+<div label="Planowane uwagi" ng-model="$ctrl.parent.rentcar.wyPlanUwagi" text-input-directive></div>
