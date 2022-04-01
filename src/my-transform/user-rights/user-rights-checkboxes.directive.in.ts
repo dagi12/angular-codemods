@@ -1,9 +1,6 @@
-// @ts-ignore
-import template from "./user-rights-checkboxes.html";
-// @ts-ignore
 import StaticConfig from "src/app/initialization/static-config";
-// @ts-ignore
 import { ExtendedConfig } from "src/zamowienia-openapi";
+import template from "./user-rights-checkboxes.html";
 
 export /*@ngInject*/ function UserRightsCheckboxes() {
   return {

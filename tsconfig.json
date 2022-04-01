@@ -6,8 +6,7 @@
     "sourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "resolveJsonModule": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "strictNullChecks": false,
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": false,
@@ -15,7 +14,6 @@
     "outDir": "build/resources/main",
     "lib": ["es2017", "dom"],
     "typeRoots": ["node_modules/@types"],
-    "allowJs": true,
     "baseUrl": "./",
     "importHelpers": true,
     "esModuleInterop": true,
@@ -27,6 +25,6 @@
     "node_modules",
     "src/**/*.js",
     "src/**/*.out.*",
-    "src/**/*.task.*"
+    "src/**/*.input.*"
   ]
 }

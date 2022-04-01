@@ -14,17 +14,25 @@
         "-p",
         "-t",
         "${fileDirname}/${fileBasenameNoExtension}.ts",
-        "${fileDirname}/${fileBasenameNoExtension}.task.js",
-        "${fileDirname}/${fileBasenameNoExtension}.solution.js"
+        "${fileDirname}/${fileBasenameNoExtension}.input.js"
       ],
+      "type": "pwa-node",
       "outputCapture": "std"
     },
     {
-      "name": "directive-transform",
+      "name": "Directive transform",
       "request": "launch",
-      "runtimeArgs": ["run-script", "directive-transform"],
-      "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
+      "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
+      "args": [
+        "-d",
+        "-p",
+        "-t",
+        "src/my-transform/directive-to-component.ts",
+        "--extensions=ts",
+        "--parser=ts",
+        "src/my-transform/user-rights/user-rights-checkboxes.directive.in.ts"
+      ],
       "type": "pwa-node",
       "outputCapture": "std"
     },

@@ -18,15 +18,16 @@
   "jscodeshift transformer": {
     "prefix": "tra",
     "body": [
-      "import { API, Collection, FileInfo, FunctionDeclaration } from 'jscodeshift';",
+      "import { API, FileInfo } from \"jscodeshift\";",
       "",
       "export const parser = \"babel\";",
       "",
-      "export default function transformer(file: FileInfo, api: API) {",
+      "export default function transformer(fileInfo: FileInfo, api: API) {",
       "  const j = api.jscodeshift;",
       "",
-      "  return j(file.source).toSource();",
+      "  const root = j(fileInfo.source);",
       "",
+      "  return root.toSource();",
       "}",
       ""
     ],

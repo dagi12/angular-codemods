@@ -1,0 +1,3 @@
+[submodule "src/tutorial-toptal"]
+	path = src/tutorial-toptal
+	url = git@github.com:reergymerej/jscodeshift-article.git

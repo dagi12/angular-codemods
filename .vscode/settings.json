@@ -11,5 +11,6 @@
     "source.organizeImports": true
   },
   "editor.formatOnPaste": true,
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "typescript.preferences.importModuleSpecifier": "relative"
 }
