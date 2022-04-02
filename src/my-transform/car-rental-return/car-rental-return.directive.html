@@ -1,0 +1,23 @@
+<rental-place
+  label="Miejsce powrotu"
+  on-rental-place-change="$ctrl.rentalPlaceChange($event);"
+  rental-place="$ctrl.parent.rentcar.zdFaktMiejsce"
+></rental-place>
+<div
+  date-picker-directive
+  input-id="departure-date"
+  label="Data powrotu"
+  ng-model="$ctrl.parent.rentcar.powrotData"
+></div>
+<fuel-counter
+  counter-model="$ctrl.parent.rentcar.powrotLicznik"
+  fuel-limit="$ctrl.parent.fuelLimit"
+  fuel-model="$ctrl.parent.rentcar.powrotPaliwo"
+  fuel-type="$ctrl.parent.fuelType"
+></fuel-counter>
+
+<summary-buttons
+  add="$ctrl.add()"
+  clear-and-redirect="$ctrl.clearAndRedirect()"
+  ng-if="$ctrl.parent.zdPlanUKl && $ctrl.parent.pickupMode"
+></summary-buttons>

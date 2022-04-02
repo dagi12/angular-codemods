@@ -6,7 +6,24 @@ import {
   FunctionExpression,
 } from "jscodeshift";
 
-export function isDirectChildOf(parentCollection: Collection, child: ASTPath) {
+export function isDirectChildOf(
+  parentCollection: Collection,
+  child: ASTPath<any>
+) {
+  let current = child.parentPath;
+  // Ignoring object expressions
+  while (current.node && current.node.type === "ObjectExpression") {
+    current = current.parentPath;
+  }
+
+  return current.node === parentCollection.get(0).node;
+}
+
+export function searchDepth(
+  parentCollection: Collection,
+  child: ASTPath<any>,
+  depth: number
+) {
   let current = child.parentPath;
   // Ignoring object expressions
   while (current.node && current.node.type === "ObjectExpression") {
@@ -54,4 +71,18 @@ export function assertOne(c: Collection | any[]) {
   } else if (c.length > 1) {
     throw new Error("\n WIĘCEJ NIŻ 1 ELEMENT \n");
   }
+}
+
+export function isSingle(c: Collection | any[]) {
+  if (!c) {
+    console.info("NULL POINTER\n");
+    return false;
+  } else if (c.length === 0) {
+    console.info("\n PUSTA KOLEKCJA \n");
+    return false;
+  } else if (c.length > 1) {
+    console.info("\n WIĘCEJ NIŻ 1 ELEMENT \n");
+    return false;
+  }
+  return true;
 }

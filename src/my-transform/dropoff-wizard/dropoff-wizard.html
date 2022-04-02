@@ -1,0 +1,13 @@
+<my-wizard
+  back-state="main.rent.dropoffGrid"
+  extra-linking="extraLinking()"
+  steps="$ctrl.steps"
+  wizard-callback="wizardCallback({ wizard: wizard })"
+  wizard-icon="fa-arrow-up"
+  wizard-manager="$ctrl.parent.wizardManager"
+  wizard-title="Wydanie"
+>
+  <tc-form>
+    <div id="dropoff-form-views" ui-view></div>
+  </tc-form>
+</my-wizard>

@@ -1,0 +1,12 @@
+<my-wizard
+  back-state="main.rent.pickupGrid"
+  steps="$ctrl.steps"
+  wizard-callback="$ctrl.wizardCallback({ wizard: wizard })"
+  wizard-icon="fa-arrow-down"
+  wizard-manager="$ctrl.parent.wizardManager"
+  wizard-title="Zdanie"
+>
+  <tc-form>
+    <div id="pickup-form-views" ui-view></div>
+  </tc-form>
+</my-wizard>

@@ -25,7 +25,9 @@
 - some types ara different than ASTExplorer
   - Property is ObjectProperty
 - does not match type array -> inserted at wrong place try parent
+- child node variables becomes undefined when paren is removed from ast tree
 
 ## Good practices
 
 - use get(0).node instead get().value
+- use closest instead parent

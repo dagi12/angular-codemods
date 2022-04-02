@@ -1,0 +1,50 @@
+<rental-place-wrapper
+  checkbox-ui-model="$ctrl.rentcarWizard.czyPodst"
+  custom-rental-place="$ctrl.rentcarItem.miejscePodst"
+  default-message="Wybierz oddział"
+  hide-checkbox="$ctrl.rentcarWizard.previewMode"
+  label="Lokalizacja"
+  ng-disabled="$ctrl.disableLocation"
+  rental-place="$ctrl.rentcarItem.wydPlanMiejsce"
+  select-callback="$ctrl.rentalSelectCallback(ngModel)"
+  yes-no-model="$ctrl.rentcarItem.czyPodst"
+></rental-place-wrapper>
+
+<div
+  checkbox-directive
+  client-field-factory-directive="returnPlace"
+  label="Inne miejsce zdania"
+  ng-change="$ctrl.checkboxChange()"
+  ng-if="!$ctrl.rentcarWizard.previewMode && !$root.zamGlobals.configuration.smallRent"
+  ng-model="$ctrl.rentcarWizard.$ctrl.differentReturnPlace"
+></div>
+
+<div
+  class="extra-border mb-1"
+  ng-if="$ctrl.rentcarWizard.$ctrl.differentReturnPlace"
+>
+  <rental-place
+    default-message="Wybierz oddział"
+    label="Lokalizacja"
+    on-rental-place-change="$ctrl.pickupPlaceChange($event)"
+    rental-place="$ctrl.rentcarItem.zdPlanMiejsce"
+    required="true"
+  ></rental-place>
+
+  <div
+    checkbox-directive
+    label="Odbiór z adresu"
+    ng-if="!$ctrl.rentcarWizard.previewMode"
+    ng-model="$ctrl.rentcarWizard.czyOdbior"
+    yes-no-checkbox-directive
+    yes-no-model="$ctrl.rentcarItem.czyOdbior"
+  ></div>
+
+  <div
+    label="Adres"
+    max-length="39"
+    ng-if="$ctrl.rentcarWizard.czyOdbior"
+    ng-model="$ctrl.rentcarItem.miejsceOdbior"
+    text-input-directive
+  ></div>
+</div>

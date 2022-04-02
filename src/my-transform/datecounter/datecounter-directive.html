@@ -1,0 +1,28 @@
+<div checkbox-directive label="Podstawienie do klienta" ng-model="$ctrl.parent.wyPlanUKl" yes-no-checkbox-directive yes-no-model="$ctrl.parent.rentcar.wyPlanUKl"></div>
+<div class="ibox float-e-margins p-none" ng-show="$ctrl.parent.wyPlanUKl">
+  <div class="ibox-title">
+    <h5>
+      <i aria-hidden="true" class="fa fa-arrow-up"></i>
+      <span translate="">Wyjazd z wypożyczalni</span>
+    </h5>
+  </div>
+  <div class="ibox-content">
+    <rental-place label="Miejsce wyjazdu" on-rental-place-change="$ctrl.rentalPlaceChange($event)" rental-place="$ctrl.parent.rentcar.wyFaktMiejsce" required="true"></rental-place>
+    <div date-picker-directive input-id="departure-date" label="Data wyjazdu" ng-model="$ctrl.parent.rentcar.wyjazdData"></div>
+    <fuel-counter counter-model="$ctrl.parent.rentcar.wyjazdLicznik" fuel-limit="$ctrl.parent.fuelLimit" fuel-model="$ctrl.parent.rentcar.wyjazdPaliwo" fuel-type="$ctrl.parent.fuelType"></fuel-counter>
+  </div>
+</div>
+<div class="ibox float-e-margins p-none">
+  <div class="ibox-title">
+    <h5>
+      <i aria-hidden="true" class="fa fa-handshake-o"></i>
+      <span translate="">Wydanie klientowi</span>
+    </h5>
+  </div>
+  <div class="ibox-content">
+    <rental-place label="Miejsce wydania" ng-if="!$ctrl.parent.wyPlanUKl" on-rental-place-change="$ctrl.rentalPlaceChange($event)" rental-place="$ctrl.parent.rentcar.wyFaktMiejsce"></rental-place>
+    <div label="Miejsce wydania" max-length="99" ng-model="$ctrl.parent.rentcar.wyFaktUKlMiejsce" ng-show="$ctrl.parent.wyPlanUKl" required-label="true" text-input-directive></div>
+    <div date-picker-directive input-id="dropoff-date" label="Data wydania" ng-model="$ctrl.parent.rentcar.wyFaktData" required-label="true"></div>
+    <fuel-counter counter-model="$ctrl.parent.rentcar.wyStanLicz" fuel-limit="$ctrl.parent.fuelLimit" fuel-model="$ctrl.parent.rentcar.wyStanPal" fuel-type="$ctrl.parent.fuelType"></fuel-counter>
+  </div>
+</div>

@@ -20,6 +20,23 @@
       "outputCapture": "std"
     },
     {
+      "name": "Dynamic file transform",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
+      "args": [
+        "-d",
+        "-p",
+        "-t",
+        "src/my-transform/directive-to-component.ts",
+        "--extensions=ts",
+        "--parser=ts",
+        "${file}"
+      ],
+      "type": "pwa-node",
+      "outputCapture": "std"
+    },
+    {
       "name": "Directive transform",
       "request": "launch",
       "skipFiles": ["<node_internals>/**"],
