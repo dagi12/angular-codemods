@@ -13,6 +13,7 @@
 - add step by step transforming methods
 - ensure you found correct nodes
 - then replace them or insert in new
+- use eslint autofixes for edge cases
 
 ## Common misconceptions
 

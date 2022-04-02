@@ -96,11 +96,7 @@ export function allFunExpressions(parentNode: Collection) {
 function nonFunExpressionsInBlock(
   parentNodePath: Collection
 ): ExpressionStatement[] {
-  const fnBlockNodePath = parentNodePath
-    .find(j.FunctionExpression)
-    .at(0)
-    .find(j.BlockStatement)
-    .at(0);
+  const fnBlockNodePath = parentNodePath.find(j.BlockStatement).at(0);
 
   const linkFunBlockFuns = allFunExpressions(fnBlockNodePath);
 
@@ -110,7 +106,7 @@ function nonFunExpressionsInBlock(
     ...linkFunBlockFuns.memberArrowFunExprs.nodes(),
   ];
 
-  const blockExprs = fnBlockNodePath.find(j.ExpressionStatement);
+  const blockExprs: Collection = fnBlockNodePath.find(j.ExpressionStatement);
   const directExprs = blockExprs.filter((p) =>
     isDirectChildOf(fnBlockNodePath, p)
   );
@@ -223,15 +219,31 @@ export default function transformer(file: FileInfo, api: API) {
   let linkFn = directiveObjectBlock.find(j.ObjectProperty, {
     key: { name: "link" },
   });
+
+  let extraStmtToOnInit: any[] = [];
+
   if (!linkFn.length) {
-    linkFn = directiveObjectBlock
-      .find(j.ObjectProperty, {
+    const compileObject: Collection = directiveObjectBlock.find(
+      j.ObjectProperty,
+      {
         key: { name: "compile" },
-      })
-      .find(j.ReturnStatement)
-      .find(j.ObjectProperty, {
-        key: { name: "post" },
-      });
+      }
+    );
+    if (compileObject.length === 1) {
+      const compileBlock = compileObject.find(j.BlockStatement);
+      const compileFunCollection = compileBlock
+        .find(j.ExpressionStatement)
+        .filter((p) => isDirectChildOf(compileBlock, p))
+        .filter((p: ASTPath) => p.node.type !== j.ReturnStatement.toString());
+      extraStmtToOnInit = compileFunCollection.nodes();
+      compileFunCollection
+        .find(j.Identifier, { name: "attrs" })
+        .replaceWith(j.identifier("this"));
+    }
+    const returnBlock = compileObject.find(j.ReturnStatement);
+    linkFn = returnBlock.find(j.ObjectProperty, {
+      key: { name: "post" },
+    });
   }
 
   linkFn
@@ -305,7 +317,7 @@ export default function transformer(file: FileInfo, api: API) {
         j.functionExpression(
           null,
           [],
-          j.blockStatement([...ctrlNonFunExpressions])
+          j.blockStatement([...extraStmtToOnInit, ...ctrlNonFunExpressions])
         )
       ),
       j.methodDefinition(
@@ -376,17 +388,47 @@ function replaceHtmlVariables(tokens: string[], filePath: string) {
   }
   const root = HTMLParser(fs.readFileSync(htmlFilePath).toString());
   const allElements = root.querySelectorAll("*");
-  allElements.forEach((elem) => {
-    for (let [key, value] of Object.entries(elem.attrs)) {
-      tokens.forEach((token) => {
-        if (value.includes(token)) {
-          elem.attrs[key] = replaceAll(value, token, "$ctrl." + token);
+  tokens.forEach((token) => {
+    allElements.forEach((elem) => {
+      const attrEntries = Object.entries(elem.attrs);
+      const newToken = "$ctrl." + token;
+      for (let [key, value] of attrEntries) {
+        if (
+          value.includes(token) &&
+          !value.includes(newToken) &&
+          (!limitedAttrs[token] || limitedAttrs[token] === key) &&
+          token !== attrTokenEdgeCaseMap[key]
+        ) {
+          elem.setAttribute(key, replaceAll(value, token, newToken));
         }
-      });
-    }
+      }
+      const textToReplace = elem.structuredText.trim();
+      if (
+        elem.childNodes.length === 1 &&
+        elem.firstChild.constructor.name === "TextNode" &&
+        textToReplace.includes(token) &&
+        !textToReplace.includes(newToken) &&
+        textToReplace.includes("{{")
+      ) {
+        const open = textToReplace.split("{{");
+        const close = open[1].split("}}");
+        const replaced = replaceAll(close[0], token, newToken);
+        elem.textContent = `${open[0]}{{ ${replaced} }}${close[1]}`;
+      }
+    });
   });
   fs.writeFileSync(htmlFilePath, root.outerHTML);
 }
+
+const attrTokenEdgeCaseMap = {
+  class: "label",
+  "ng-model": "controller",
+  "ng-if-inside": "id",
+};
+
+const limitedAttrs = {
+  id: "id",
+};
 
 function replaceAll(str: string, find: string, replace: string) {
   return str.replace(new RegExp(escapeRegExp(find), "g"), replace);

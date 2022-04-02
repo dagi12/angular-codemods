@@ -1,43 +1,45 @@
-import template from './my-auto-complete.html';
-import './my-auto-complete.css';
-import StaticConfig from 'src/app/initialization/static-config';
-import { IQService, ITimeoutService } from 'angular';
+import { IQService, ITimeoutService } from "angular";
+import StaticConfig from "src/app/initialization/static-config";
+import "./my-auto-complete.css";
+import template from "./my-auto-complete.html";
 
 const NIP_LENGTH = 10;
 const CLIENT_AUTOCOMPLETE_ID_LIST = new Set([
-  'client-autocomplete',
-  'payer-autocomplete',
-  'instructor-autocomplete'
+  "client-autocomplete",
+  "payer-autocomplete",
+  "instructor-autocomplete",
 ]);
 
 const modelOptions = {
   debounce: {
     default: 400,
-    blur: 250
-  }
+    blur: 250,
+  },
 };
 
-export /*@ngInject*/ function MyAutoCompleteDirective($timeout: ITimeoutService) {
+export /*@ngInject*/ function MyAutoCompleteDirective(
+  $timeout: ITimeoutService
+) {
   return {
     scope: {
-      id: '@?',
-      label: '@?',
-      placeholder: '@?',
-      customStyle: '@?',
-      customLabelStyle: '@?',
-      ngModel: '=',
-      ngIfInside: '<',
-      textMethod: '@',
-      textMethodNew: '<?',
-      callback: '&?',
-      resultSetItemText: '&?',
-      querySearch: '&?',
-      notFoundCallback: '&?',
-      api: '=?',
-      ngDisabled: '<?',
-      ngIf: '<?',
-      ngShow: '<?',
-      mdNoCache: '=?'
+      id: "@?",
+      label: "@?",
+      placeholder: "@?",
+      customStyle: "@?",
+      customLabelStyle: "@?",
+      ngModel: "=",
+      ngIfInside: "<",
+      textMethod: "@",
+      textMethodNew: "<?",
+      callback: "&?",
+      resultSetItemText: "&?",
+      querySearch: "&?",
+      notFoundCallback: "&?",
+      api: "=?",
+      ngDisabled: "<?",
+      ngIf: "<?",
+      ngShow: "<?",
+      mdNoCache: "=?",
     },
     transclude: true,
     controller: /*@ngInject*/ function ($scope, $q: IQService) {
@@ -61,7 +63,8 @@ export /*@ngInject*/ function MyAutoCompleteDirective($timeout: ITimeoutService)
         $timeout(() => {
           if (
             !!$scope.controller.ngModel &&
-            (!event.target.value || typeof $scope.controller.ngModel === 'string')
+            (!event.target.value ||
+              typeof $scope.controller.ngModel === "string")
           ) {
             $scope.controller.ngModel = undefined;
           }
@@ -77,7 +80,7 @@ export /*@ngInject*/ function MyAutoCompleteDirective($timeout: ITimeoutService)
           return $q.when([]);
         }
         const itemList = $scope.querySearch({ searchItemText });
-        itemList.then(list => {
+        itemList.then((list) => {
           if (list.length === 0 && $scope.notFoundCallback) {
             $scope.notFoundCallback({ id: $scope.id, searchItemText });
           }
@@ -85,7 +88,7 @@ export /*@ngInject*/ function MyAutoCompleteDirective($timeout: ITimeoutService)
         return itemList;
       };
 
-      $scope.$watch('ngModel', value => {
+      $scope.$watch("ngModel", (value) => {
         $scope.controller.ngModel = value;
       });
 
@@ -99,19 +102,21 @@ export /*@ngInject*/ function MyAutoCompleteDirective($timeout: ITimeoutService)
         if ($scope.callback) {
           $timeout(() => {
             $scope.callback({
-              ngModel: $scope.controller.ngModel
+              ngModel: $scope.controller.ngModel,
             });
           });
         }
       };
 
       $scope.itemTextDirectiveMethod = !$scope.textMethod
-        ? item => $scope.textMethodNew(item)
-        : item => {
+        ? (item) => {
+            return $scope.textMethodNew(item);
+          }
+        : (item) => {
             if (!item) {
               return null;
             }
-            if (typeof item[$scope.textMethod] === 'function') {
+            if (typeof item[$scope.textMethod] === "function") {
               return item[$scope.textMethod]();
             }
             return item[$scope.textMethod];
@@ -127,20 +132,20 @@ export /*@ngInject*/ function MyAutoCompleteDirective($timeout: ITimeoutService)
         return $scope.resultSetItemText({ item });
       };
     },
-    compile: function (element, attrs) {
-      attrs.id = attrs.id || 'ordering-person-autocomplete';
-      attrs.ngIfInside = attrs.ngIfInside || 'true';
-      attrs.querySearch = attrs.querySearch || 'querySearch(searchItemText)';
+    compile: (element, attrs) => {
+      attrs.id = attrs.id || "ordering-person-autocomplete";
+      attrs.ngIfInside = attrs.ngIfInside || "true";
+      attrs.querySearch = attrs.querySearch || "querySearch(searchItemText)";
       return {
-        post: scope =>
+        post: (scope) => {
           $timeout(() => {
-            // eslint-disable-next-line unicorn/no-array-callback-reference
-            if (element.find('input').attr('disabled')) {
+            if (element.find("input").attr("disabled")) {
               scope.hideButton = true;
             }
-          })
+          });
+        },
       };
     },
-    template
+    template,
   };
 }
