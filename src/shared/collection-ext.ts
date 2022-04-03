@@ -12,8 +12,8 @@ export function update(node: ASTNode, name: string) {
   }
 }
 
-function insertAtTheBegining(root: Collection, s: string): void {
-  return root.get().node.program.body.unshift(s);
+function insertAtTheBegining(s: string): void {
+  return this.get().node.program.body.unshift(s);
 }
 
 function renamePropertyTo(path: Collection, name: string) {

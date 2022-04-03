@@ -18,7 +18,7 @@
     "**/node_modules/*/**": true
   },
   "files.associations": {
-    "**/src/my-transform/**/*.ts": "plaintext",
-    "**/src/my-transform/directive-to-component.ts": "typescript"
+    "**/src/*-transform/*.ts": "plaintext",
+    "**/src/*-transform/index.ts": "typescript"
   }
 }

@@ -19,6 +19,7 @@
     "@babel/core": "^7.17.8",
     "@babel/preset-env": "^7.16.11",
     "@babel/preset-typescript": "^7.16.7",
+    "@codeshift/utils": "^0.1.5",
     "@types/deep-assign": "^0.1.1",
     "@types/node": "^17.0.23",
     "babel-register": "^6.26.0",

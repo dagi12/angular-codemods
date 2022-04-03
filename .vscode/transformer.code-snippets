@@ -19,6 +19,9 @@
     "prefix": "tra",
     "body": [
       "import { API, FileInfo } from \"jscodeshift\";",
+      "import { insertImportSpecifier } from \"@codeshift/utils\";",
+      "",
+      "export const parser = \"babel\";",
       "",
       "export const parser = \"babel\";",
       "",
@@ -27,9 +30,12 @@
       "",
       "  const root = j(fileInfo.source);",
       "",
+      "  insertImportSpecifier(j, root, \"NgModule\", \"angular-ts-decorators\");",
+      "",
+      "  const rootExports = root.find(j.ExportNamedDeclaration);",
+      "",
       "  return root.toSource();",
-      "}",
-      ""
+      "}"
     ],
     "description": "jscodeshift transformer"
   }

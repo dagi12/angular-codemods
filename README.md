@@ -31,3 +31,7 @@
 
 - use get(0).node instead get().value
 - use closest instead parent
+- naming convention
+  - c - collection
+  - p - nodepath
+  - n - node

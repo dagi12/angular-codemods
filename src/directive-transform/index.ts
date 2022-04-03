@@ -18,9 +18,9 @@ import {
 import HTMLParser from "node-html-parser";
 import { createArrowFunctionExpression2 } from "../shared/build-util";
 import "../shared/collection-ext";
+import { collectionExt, MyCollection } from "../shared/collection-ext";
 import { fileExists } from "../shared/fs-util";
 import { assertOne, isDirectChildOf, isSingle } from "../shared/search-util";
-import { collectionExt, MyCollection } from "./../shared/collection-ext";
 
 function fromDeclaration(toClassArrow: FunctionDeclaration): ClassProperty {
   const arrowFunc = j.arrowFunctionExpression(
@@ -151,7 +151,6 @@ export default function transformer(file: FileInfo, api: API) {
   const root = j(file.source) as MyCollection;
 
   root.insertAtTheBegining(
-    root,
     'import { IComponentOptions, IController } from "angular";'
   );
 

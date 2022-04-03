@@ -955,6 +955,11 @@
     "@babel/helper-validator-identifier" "^7.16.7"
     to-fast-properties "^2.0.0"
 
+"@codeshift/utils@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@codeshift/utils/-/utils-0.1.5.tgz#9ee8fca768d9fe318d67261e6243a501d6ac762c"
+  integrity sha512-FzV/s48jTG5SH1Pf/FqmLmQid0HbxmCl2JnbB/Dfl7zRVfp4tj1LbRMwEUl4VH/BOrrmTXmHD5c6M/xY1ObhrQ==
+
 "@jridgewell/resolve-uri@^3.0.3":
   version "3.0.5"
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.0.5.tgz#68eb521368db76d040a6315cdb24bf2483037b9c"
