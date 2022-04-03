@@ -7,7 +7,9 @@
     {
       "name": "Transform tutorial",
       "request": "launch",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
       "args": [
         "-d",
@@ -22,13 +24,15 @@
     {
       "name": "Dynamic file transform",
       "request": "launch",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
       "args": [
         "-d",
         "-p",
         "-t",
-        "src/my-transform/directive-to-component.ts",
+        "src/directive-transform/index.ts",
         "--extensions=ts",
         "--parser=ts",
         "${file}"
@@ -36,13 +40,17 @@
       "type": "pwa-node",
       "outputCapture": "std"
     },
-
     {
-      "name": "Module transform",
+      "name": "Single Module transform",
       "request": "launch",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
       "args": [
+        "--fail-on-error",
+        "-v",
+        "1",
         "-d",
         "-p",
         "-t",
@@ -55,9 +63,25 @@
       "outputCapture": "std"
     },
     {
+      "name": "All module transform",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "runtimeArgs": [
+        "run-script",
+        "modules"
+      ],
+      "runtimeExecutable": "npm",
+      "type": "pwa-node",
+      "outputCapture": "std"
+    },
+    {
       "name": "Directive transform",
       "request": "launch",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
       "args": [
         "-d",
@@ -74,18 +98,29 @@
     {
       "name": "Launch via NPM",
       "request": "launch",
-      "runtimeArgs": ["run-script", "debug"],
+      "runtimeArgs": [
+        "run-script",
+        "debug"
+      ],
       "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "type": "pwa-node"
     },
     {
       "name": "Launch Program",
       "type": "pwa-node",
       "request": "launch",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
-      "args": ["-t", "./angular-module-exports/transformer.js", "${file}"]
+      "args": [
+        "-t",
+        "./angular-module-exports/transformer.js",
+        "${file}"
+      ]
     }
   ]
 }

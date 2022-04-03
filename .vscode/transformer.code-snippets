@@ -21,7 +21,6 @@
       "import { API, FileInfo } from \"jscodeshift\";",
       "import { insertImportSpecifier } from \"@codeshift/utils\";",
       "",
-      "export const parser = \"babel\";",
       "",
       "export const parser = \"babel\";",
       "",

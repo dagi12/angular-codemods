@@ -1,28 +1,16 @@
 import { ExpressionKind } from "ast-types/gen/kinds";
-import {
+import jscodeshift, {
   ASTPath,
   BlockStatement,
   Collection,
+  FileInfo,
   FunctionExpression,
+  JSCodeshift,
 } from "jscodeshift";
 
 export function isDirectChildOf(
   parentCollection: Collection,
   child: ASTPath<any>
-) {
-  let current = child.parentPath;
-  // Ignoring object expressions
-  while (current.node && current.node.type === "ObjectExpression") {
-    current = current.parentPath;
-  }
-
-  return current.node === parentCollection.get(0).node;
-}
-
-export function searchDepth(
-  parentCollection: Collection,
-  child: ASTPath<any>,
-  depth: number
 ) {
   let current = child.parentPath;
   // Ignoring object expressions
@@ -63,11 +51,30 @@ export const findStatementBody = (
   return fn.body;
 };
 
-export function assertOne(c: Collection | any[]) {
+export const initialConditions = (
+  fileInfo: FileInfo,
+  root: Collection,
+  transformed: Collection,
+  mainObject: Collection
+) => {
+  if (transformed.length) {
+    console.log("Already transformed");
+    return {};
+  }
+  const initialNode = mainObject.at(0);
+  assertOne(initialNode, "Initial node not found");
+
+  const beginLn = fileInfo.source.split(/\r\n|\r|\n/).length;
+  const beginCount = root.find(jscodeshift.Expression).length;
+
+  return { initialNode, beginLn, beginCount };
+};
+
+export function assertOne(c: Collection | any[], msg = "\n PUSTA KOLEKCJA \n") {
   if (!c) {
     throw new Error("NULL POINTER\n");
   } else if (c.length === 0) {
-    throw new Error("\n PUSTA KOLEKCJA \n");
+    throw new Error(msg);
   } else if (c.length > 1) {
     throw new Error("\n WIĘCEJ NIŻ 1 ELEMENT \n");
   }
@@ -85,4 +92,44 @@ export function isSingle(c: Collection | any[]) {
     return false;
   }
   return true;
+}
+
+export function assertCodeSize(
+  beforeCount: number,
+  beforeLn: number,
+  j: JSCodeshift,
+  root: Collection,
+  options: any,
+  tolerance = 30
+) {
+  // programing mode
+  if (
+    options.dry &&
+    options.failOnError &&
+    options.print ** options.verbose === 1
+  ) {
+    return;
+  }
+  const endCount = root.find(j.Expression).length;
+  const endSrc = root.toSource();
+  const endLn = endSrc.split(/\r\n|\r|\n/).length;
+  if (!beforeCount || !endCount) {
+    throw new Error("Plik bez ekspresji");
+  } else if (beforeCount - tolerance > endCount) {
+    throw new Error(
+      `Zgubionono expression przed ${beforeCount} po: ${endCount}`
+    );
+  }
+  if (!beforeLn || !endLn) {
+    throw new Error("Plik bez ekspresji");
+  } else if (beforeLn - tolerance > endLn) {
+    throw new Error(`Zgubionono linie przed ${beforeLn} po: ${endLn}`);
+  }
+}
+
+export function pushUnique<T>(arr: T[], elem: T) {
+  if (!arr.includes(elem)) {
+    arr.push(elem);
+  }
+  return arr;
 }

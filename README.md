@@ -10,22 +10,24 @@
 
 - first copy and analyze input to https://astexplorer.net/
 - write output and analyze difference in tree
-- add step by step transforming methods
+- add step by step transforming methods (query, build)
 - ensure you found correct nodes
 - then replace them or insert in new
 - use eslint autofixes for edge cases
+- test easy case -> medium case -> complicated -> easy -> all
 
-## Common misconceptions
+## Common mistakes
 
 - SyntaxError - you input wrong file
-- don't use j.identifier to query use nested name
-- don't use j.arguments
+- SyntaxError - you mixed order of jscodeshift command args, results in wrong parser
 - always pass array to args
 - don't forget array block on builder
 - some types ara different than ASTExplorer
   - Property is ObjectProperty
 - does not match type array -> inserted at wrong place try parent
-- child node variables becomes undefined when paren is removed from ast tree
+- child node variables becomes undefined when parent is removed from ast tree
+- don't use `*Kind` types in `j.find` method
+- To run multiple files open bash run `shopt -s globstar && yarn run modules`
 
 ## Good practices
 
@@ -35,3 +37,9 @@
   - c - collection
   - p - nodepath
   - n - node
+
+## Scripts
+
+```sh
+find . -name "\*.module.ts" -exec sh -c 'cp "$1" /Users/erykmariankowski/programowanie/web/angular-codemods/src/module-transform' - '{}' \;
+```

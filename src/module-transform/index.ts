@@ -1,46 +1,51 @@
+import { insertImportSpecifier } from "@codeshift/utils";
 import {
   API,
   ArrayExpression,
+  ASTPath,
+  Collection,
+  ExpressionStatement,
   FileInfo,
+  FunctionExpression,
   Identifier,
+  JSCodeshift,
   Literal,
   ObjectProperty,
+  Options,
 } from "jscodeshift";
-import { collectionExt, MyCollection } from "../shared/collection-ext";
+import { myPlugin } from "../shared/collection-ext";
+import {
+  assertCodeSize,
+  initialConditions,
+  pushUnique,
+} from "../shared/search-util";
 
-export default function transformer(fileInfo: FileInfo, api: API) {
-  const j = api.jscodeshift;
+let j: JSCodeshift;
 
-  j.registerMethods(collectionExt);
+const defaultQueryResults = {
+  id: null as Literal,
+  imports: null as ArrayExpression,
+  declarations: [] as Identifier[],
+  providers: [] as { name: Literal; id: Identifier }[],
+  configDeps: [] as Identifier[],
+  configExprs: [] as ExpressionStatement[],
+};
 
-  const root = j(fileInfo.source) as MyCollection;
-
-  root.insertAtTheBegining("import { NgModule } from 'angular-ts-decorators';");
+function queryForResults(root: Collection, moduleC: Collection) {
+  const queryResults = { ...defaultQueryResults };
 
   const routeConfig = root.find(j.FunctionDeclaration, {
     id: { name: "routeConfig" },
   });
 
-  if (routeConfig.length) {
-    root.insertAtTheBegining(
-      "import { StateProvider } from '@uirouter/angularjs';"
-    );
-  }
-
-  const rootExports = root.find(j.ExportNamedDeclaration);
-
-  const moduleC = rootExports
-    .find(j.VariableDeclaration, {
-      kind: "const",
-    })
-    .at(0);
-
-  const decs = {
-    id: null as Literal,
-    imports: null as ArrayExpression,
-    declarations: [] as Identifier[],
-    providers: [] as Identifier[],
-  };
+  routeConfig.length &&
+    root.safeImportInsert(j.identifier("StateProvider"), "@uirouter/angularjs");
+  insertImportSpecifier(
+    j,
+    root,
+    j.importSpecifier(j.identifier("NgModule")),
+    "angular-ts-decorators"
+  );
 
   moduleC
     .find(j.CallExpression, {
@@ -58,43 +63,80 @@ export default function transformer(fileInfo: FileInfo, api: API) {
       const ids = p.node.arguments[1];
       const depType = p.node.callee.property.name;
       switch (depType) {
+        case "config":
+          {
+            const configFn: FunctionExpression = p.node.arguments[0];
+            if (configFn.params) {
+              configFn.params.forEach((v: Identifier) =>
+                pushUnique(queryResults.configDeps, v)
+              );
+            }
+            const body = configFn.body;
+            if (body && body.body) {
+              queryResults.configExprs = queryResults.configExprs.concat(
+                body.body.map((v) =>
+                  v.type === "ReturnStatement"
+                    ? (j.expressionStatement(v.argument) as any)
+                    : v
+                )
+              );
+            }
+          }
+          break;
         case "directive":
         case "component":
           {
-            decs.declarations.push(ids);
+            queryResults.declarations.push(ids);
           }
           break;
         case "service":
           {
-            decs.providers.push(ids);
+            queryResults.providers.push({
+              name: p.node.arguments[0],
+              id: p.node.arguments[1],
+            });
           }
           break;
         case "module": {
-          decs.imports = ids;
-          decs.id = p.node.arguments[0];
+          queryResults.imports = ids;
+          queryResults.id = p.node.arguments[0];
         }
       }
     });
+  return { queryResults, routeConfig };
+}
 
-  const p1: ObjectProperty = j.objectProperty(j.identifier("id"), decs.id);
+const buildClass = (
+  replacePath: ASTPath<any>,
+  queryResult: typeof defaultQueryResults,
+  routeConfig: Collection
+) => {
+  const moduleName = replacePath.node.declarations[0].id.name;
+
+  let classBody: any = [];
+
+  const p1: ObjectProperty = j.objectProperty(
+    j.identifier("id"),
+    queryResult.id
+  );
   const p2: ObjectProperty = j.objectProperty(
     j.identifier("imports"),
-    decs.imports
+    queryResult.imports
   );
   const p3: ObjectProperty = j.objectProperty(
     j.identifier("providers"),
     j.arrayExpression(
-      decs.providers.map((v) =>
-        j.objectExpression([
-          j.objectProperty(j.identifier("provide"), j.literal(v.name)),
-          j.objectProperty(j.identifier("useClass"), j.identifier(v.name)),
-        ])
-      )
+      queryResult.providers.map((v) => {
+        return j.objectExpression([
+          j.objectProperty(j.identifier("provide"), v.name),
+          j.objectProperty(j.identifier("useClass"), v.id),
+        ]);
+      })
     )
   );
   const p4: ObjectProperty = j.objectProperty(
     j.identifier("declarations"),
-    j.arrayExpression([...decs.declarations])
+    j.arrayExpression([...queryResult.declarations])
   );
   const decorator = j.decorator(
     j.callExpression(j.identifier("NgModule"), [
@@ -102,29 +144,68 @@ export default function transformer(fileInfo: FileInfo, api: API) {
     ])
   );
 
-  const moduleName = moduleC.get(0).node.declarations[0].id.name;
+  const routeConfigClassMethod = j.classMethod(
+    "method",
+    j.identifier("config"),
+    queryResult.configDeps,
+    j.blockStatement([
+      ...queryResult.configExprs,
+      ...(routeConfig.length ? routeConfig.get(0).node.body.body : []),
+    ]),
+    false,
+    true
+  );
+  routeConfigClassMethod.comments = [j.commentBlock("@ngInject")];
+  classBody = [routeConfigClassMethod];
 
-  moduleC.replaceWith((v) => {
-    const routeConfigClassMethod = j.classMethod(
-      "method",
-      j.identifier("config"),
-      routeConfig.get(0).node.params,
-      routeConfig.get(0).node.body,
-      false,
-      true
-    );
-    routeConfigClassMethod.comments = [j.commentBlock("@ngInject")];
-    const classBody = routeConfig.length ? routeConfigClassMethod : undefined;
-    // j.methodDefinition("method", j.identifier(""))
-    const classDec: any = j.classDeclaration(
-      j.identifier(moduleName),
-      j.classBody([classBody])
-    );
-    classDec.decorators = [decorator];
-    return classDec;
-  });
+  const classDec: any = j.classDeclaration(
+    j.identifier(moduleName),
+    j.classBody(classBody)
+  );
+  classDec.decorators = [decorator];
 
   routeConfig.length && routeConfig.remove();
 
+  return classDec;
+};
+
+export default function transformer(
+  fileInfo: FileInfo,
+  api: API,
+  options: Options
+) {
+  j = api.jscodeshift;
+  j.use(myPlugin);
+  const root = j(fileInfo.source);
+  const rootExports = root.find(j.ExportNamedDeclaration);
+
+  const initialNode = rootExports
+    .find(j.VariableDeclaration, {
+      kind: "const",
+    })
+    .filter((p: any) => {
+      const name: string = p.node.declarations[0].id.name;
+      return name.endsWith("Module");
+    });
+
+  const {
+    beginCount,
+    beginLn,
+    initialNode: moduleC,
+  } = initialConditions(
+    fileInfo,
+    root,
+    root.find(j.ClassDeclaration),
+    initialNode
+  );
+  if (!moduleC) {
+    return;
+  }
+
+  const { queryResults, routeConfig } = queryForResults(root, moduleC);
+
+  moduleC.replaceWith((p) => buildClass(p, queryResults, routeConfig));
+
+  assertCodeSize(beginLn, beginCount, j, root, options);
   return root.toSource();
 }

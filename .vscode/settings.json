@@ -14,11 +14,17 @@
   "editor.formatOnSave": true,
   "typescript.preferences.importModuleSpecifier": "relative",
   "files.exclude": {
-    "**/.staging/@babel": true,
-    "**/node_modules/*/**": true
+    "**/.staging/@babel": true
   },
   "files.associations": {
     "**/src/*-transform/*.ts": "plaintext",
-    "**/src/*-transform/index.ts": "typescript"
+    "**/src/*-transform/index.ts": "typescript",
+    "**/src/app/**/*.ts": "plaintext"
+  },
+  "files.watcherExclude": {
+    "src/app": true
+  },
+  "search.exclude": {
+    "src/app": true
   }
 }
