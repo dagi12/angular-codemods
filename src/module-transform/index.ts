@@ -22,6 +22,9 @@ import {
 
 let j: JSCodeshift;
 
+// FIXME ręcznie   .factory(MyHttpInterceptorFactoryName, MyHttpInterceptor)
+// FIXME funckja run varuiable emitter i constant basePath
+
 const defaultQueryResults = {
   id: null as Literal,
   imports: null as ArrayExpression,
@@ -191,7 +194,7 @@ export default function transformer(
   const {
     beginCount,
     beginLn,
-    initialNode: moduleC,
+    mainPath: moduleC,
   } = initialConditions(
     fileInfo,
     root,

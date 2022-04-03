@@ -1,5 +1,7 @@
 import { ExpressionKind } from "ast-types/gen/kinds";
+import { Type } from "ast-types/lib/types";
 import jscodeshift, {
+  ASTNode,
   ASTPath,
   BlockStatement,
   Collection,
@@ -55,19 +57,19 @@ export const initialConditions = (
   fileInfo: FileInfo,
   root: Collection,
   transformed: Collection,
-  mainObject: Collection
+  initialNode: Collection
 ) => {
   if (transformed.length) {
     console.log("Already transformed");
     return {};
   }
-  const initialNode = mainObject.at(0);
-  assertOne(initialNode, "Initial node not found");
+  const mainPath = initialNode.at(0);
+  assertOne(mainPath, "Initial node not found");
 
   const beginLn = fileInfo.source.split(/\r\n|\r|\n/).length;
   const beginCount = root.find(jscodeshift.Expression).length;
 
-  return { initialNode, beginLn, beginCount };
+  return { mainPath, beginLn, beginCount };
 };
 
 export function assertOne(c: Collection | any[], msg = "\n PUSTA KOLEKCJA \n") {
@@ -123,6 +125,7 @@ export function assertCodeSize(
   if (!beforeLn || !endLn) {
     throw new Error("Plik bez ekspresji");
   } else if (beforeLn - tolerance > endLn) {
+    console.error(endSrc);
     throw new Error(`Zgubionono linie przed ${beforeLn} po: ${endLn}`);
   }
 }
@@ -132,4 +135,18 @@ export function pushUnique<T>(arr: T[], elem: T) {
     arr.push(elem);
   }
   return arr;
+}
+
+export function reassignForBuilder<T extends ASTNode>(
+  root: Collection,
+  results: object,
+  type: Type<T>,
+  propArr: string[]
+) {
+  propArr.forEach((s) => {
+    const c = root.find(type, {
+      key: { name: s },
+    } as any);
+    results[s] = c && c.length ? c.nodes() : [];
+  });
 }

@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Transform tutorial",
+      "name": "Decorator file transform",
       "request": "launch",
       "skipFiles": [
         "<node_internals>/**"
@@ -15,24 +15,7 @@
         "-d",
         "-p",
         "-t",
-        "${fileDirname}/${fileBasenameNoExtension}.ts",
-        "${fileDirname}/${fileBasenameNoExtension}.input.js"
-      ],
-      "type": "pwa-node",
-      "outputCapture": "std"
-    },
-    {
-      "name": "Dynamic file transform",
-      "request": "launch",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
-      "args": [
-        "-d",
-        "-p",
-        "-t",
-        "src/directive-transform/index.ts",
+        "src/decorator-transform/directive.ts",
         "--extensions=ts",
         "--parser=ts",
         "${file}"
@@ -84,13 +67,12 @@
       ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
       "args": [
-        "-d",
         "-p",
         "-t",
-        "src/my-transform/directive-to-component.ts",
+        "src/directive-transform/index.ts",
         "--extensions=ts",
         "--parser=ts",
-        "src/my-transform/my-auto-complete/my-auto-complete.directive.ts"
+        "${file}"
       ],
       "type": "pwa-node",
       "outputCapture": "std"

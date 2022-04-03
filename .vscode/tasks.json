@@ -22,9 +22,19 @@
     {
       "type": "npm",
       "script": "directive-transform",
-      "problemMatcher": ["$tsc"],
+      "problemMatcher": [
+        "$tsc"
+      ],
       "label": "npm: directive-transform",
       "detail": "jscodeshift -p -t ./angular-module-exports/directive-transformer.js ./angular-module-exports/examples/user-rights-checkboxes.directive.ts"
+    },
+    {
+      "type": "npm",
+      "script": "directive-decorators",
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "label": "npm: directive-decorators",
     }
   ]
 }

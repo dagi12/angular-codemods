@@ -26,7 +26,7 @@
   - Property is ObjectProperty
 - does not match type array -> inserted at wrong place try parent
 - child node variables becomes undefined when parent is removed from ast tree
-- don't use `*Kind` types in `j.find` method
+- don't use `j.Decorator`, `j.Property`, `*Kind` types in `j.find` method
 - To run multiple files open bash run `shopt -s globstar && yarn run modules`
 
 ## Good practices
@@ -39,6 +39,10 @@
   - n - node
 
 ## Scripts
+
+```bash
+shopt -s globstar && node_modules/.bin/jscodeshift ./src/decorator-transform/**/*.directive.ts -t ./src/decorator-transform/directive.ts --extensions=*.ts --parser=ts
+```
 
 ```sh
 find . -name "\*.module.ts" -exec sh -c 'cp "$1" /Users/erykmariankowski/programowanie/web/angular-codemods/src/module-transform' - '{}' \;

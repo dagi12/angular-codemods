@@ -1,4 +1,4 @@
-import { hasImportDeclaration, insertImportSpecifier } from "@codeshift/utils";
+import { hasImportSpecifier } from "@codeshift/utils";
 import { Type } from "ast-types/lib/types";
 import j, {
   ASTNode,
@@ -20,7 +20,7 @@ export function update(node: ASTNode, name: string) {
   }
 }
 
-function insertAtTheBegining(s: string): void {
+function insertAtTheBegining(s: any): void {
   return this.get().node.program.body.unshift(s);
 }
 
@@ -61,8 +61,24 @@ function directChildren<T>(ofType: Type<T>): Collection<T> {
 }
 
 function safeImportInsert(id: Identifier, sourcePath: string) {
-  if (!hasImportDeclaration(j, this, sourcePath)) {
-    insertImportSpecifier(j, this, j.importSpecifier(id), sourcePath);
+  if (!hasImportSpecifier(j, this, id.name, sourcePath)) {
+    this.get().node.program.body.unshift(
+      j.importDeclaration(
+        [j.importSpecifier(id)],
+        j.literal(sourcePath),
+        "value"
+      )
+    );
+  }
+}
+
+export function renamePropertiesBy(map: { [_: string]: string }) {
+  for (let [key, value] of Object.entries(map)) {
+    this.find(j.Identifier, { name: key })
+      .filter((p: any) => {
+        return p.parent.value.type !== "ObjectProperty";
+      })
+      .replaceWith(j.identifier(value));
   }
 }
 
@@ -71,6 +87,7 @@ export const collectionExt = {
   renamePropertyTo,
   directChildren,
   safeImportInsert,
+  renamePropertiesBy,
 };
 
 export type MyCollection = Collection & typeof collectionExt;
@@ -81,6 +98,7 @@ declare module "jscodeshift/src/Collection" {
     renamePropertyTo: typeof renamePropertyTo;
     directChildren: typeof directChildren;
     safeImportInsert: typeof safeImportInsert;
+    renamePropertiesBy: typeof renamePropertiesBy;
   }
 }
 

@@ -1,178 +1,50 @@
-import fs from "fs";
+import { StatementKind } from "ast-types/gen/kinds";
 import {
   API,
-  AssignmentExpression,
   ASTPath,
   BlockStatement,
-  ClassProperty,
   Collection,
-  Expression,
-  ExpressionStatement,
+  ExportNamedDeclaration,
   FileInfo,
   Function,
-  FunctionDeclaration,
   Identifier,
   JSCodeshift,
   ObjectExpression,
+  ObjectProperty,
+  Options,
 } from "jscodeshift";
-import HTMLParser from "node-html-parser";
-import { createArrowFunctionExpression2 } from "../shared/build-util";
-import "../shared/collection-ext";
-import { collectionExt, MyCollection } from "../shared/collection-ext";
-import { fileExists } from "../shared/fs-util";
-import { assertOne, isDirectChildOf, isSingle } from "../shared/search-util";
-
-function fromDeclaration(toClassArrow: FunctionDeclaration): ClassProperty {
-  const arrowFunc = j.arrowFunctionExpression(
-    toClassArrow.params,
-    toClassArrow.body,
-    false
-  );
-  arrowFunc.returnType = toClassArrow.returnType;
-  arrowFunc.defaults = toClassArrow.defaults;
-  arrowFunc.rest = toClassArrow.rest;
-  arrowFunc.async = toClassArrow.async;
-
-  return j.classProperty(
-    j.identifier(toClassArrow.id.name),
-    arrowFunc,
-    null,
-    false
-  );
-}
-
-function fromFunExpr(toClassArrow: any): ClassProperty {
-  const expr = toClassArrow.expression;
-  return j.classProperty(
-    j.identifier(expr.left.property.name),
-    createArrowFunctionExpression2(expr.right as any),
-    null,
-    false
-  );
-}
-
-function fromAssignmentArrow(toClassArrow: any): ClassProperty {
-  const expr = toClassArrow.expression;
-  return j.classProperty(
-    j.identifier(expr.left.property.name),
-    createArrowFunctionExpression2(expr.right as any),
-    null,
-    false
-  );
-}
-
-function convertToClassProperties(
-  funDecs: ASTPath<FunctionDeclaration>[],
-  funExprs: ASTPath<AssignmentExpression>[],
-  arrExprs: ASTPath<AssignmentExpression>[]
-): ClassProperty[] {
-  return [
-    ...funDecs.map((a) => fromDeclaration(a.node)),
-    ...funExprs.map((a) => fromFunExpr(a.node)),
-    ...arrExprs.map((a) => fromAssignmentArrow(a.node)),
-  ];
-}
-
-export function scopeBlockFunExpressions(
-  parentCollection: Collection<BlockStatement>
-): {
-  [_: string]: ASTPath<any>[];
-} {
-  const funDeclars: ASTPath[] = [];
-  const memberFunExprs: ASTPath[] = [];
-  const memberArrowFunExprs: ASTPath[] = [];
-
-  parentCollection
-    .map((parentPath: ASTPath<any>) => {
-      const decs = j(parentPath).find(j.FunctionDeclaration);
-      const exprs = j(parentPath).find(j.ExpressionStatement);
-      const pathArr: ASTPath<any>[] = [
-        ...decs
-          .filter((p) => {
-            return p.parentPath == parentPath;
-          })
-          .paths(),
-        ...exprs
-          .filter((p) => {
-            return p.parentPath.node === parentPath.node;
-          })
-          .paths(),
-      ];
-      return pathArr;
-    })
-    .forEach((path) => {
-      const node = path.node as ExpressionStatement;
-      switch (node.type) {
-        case j.FunctionDeclaration.toString():
-          funDeclars.push(path);
-          break;
-        case j.ExpressionStatement.toString(): {
-          const expr = node.expression as AssignmentExpression;
-          if (expr && expr.right) {
-            if (expr.right.type === j.FunctionExpression.toString()) {
-              memberFunExprs.push(path);
-            } else if (
-              expr.right.type === j.ArrowFunctionExpression.toString()
-            ) {
-              memberArrowFunExprs.push(path);
-            }
-          }
-        }
-      }
-    });
-
-  return { funDeclars, memberFunExprs, memberArrowFunExprs };
-}
-
-function nonFunExpressionsInBlock(
-  fnBlockNodeCollection: Collection<BlockStatement>
-): Expression[] {
-  const linkFunBlockFunExprs = scopeBlockFunExpressions(fnBlockNodeCollection);
-
-  const linkFunBlockFunNodes = Object.values(linkFunBlockFunExprs)
-    .flat(2)
-    .map((v) => v.node);
-
-  return fnBlockNodeCollection
-    .find(j.Statement)
-    .filter((p) => isDirectChildOf(fnBlockNodeCollection, p))
-    .filter((p: ASTPath<ExpressionStatement>) => {
-      return !linkFunBlockFunNodes.includes(p.node);
-    })
-    .nodes();
-}
+import { groupFunctionContent } from "../../tutorial-toptal/shared/class-builder";
+import "../../tutorial-toptal/shared/collection-ext";
+import { myPlugin } from "../../tutorial-toptal/shared/collection-ext";
+import {
+  assertCodeSize,
+  initialConditions,
+  isDirectChildOf,
+} from "../../tutorial-toptal/shared/search-util";
+import { replaceHtmlVariables } from "./html";
 
 let j: JSCodeshift;
 
-export default function transformer(file: FileInfo, api: API) {
-  j = api.jscodeshift;
-  j.registerMethods(collectionExt);
+const defaultFindResults = {
+  linkFn: null as Collection<ObjectProperty>,
+  ctrlFnBodyBlock: null as Collection<ObjectProperty>,
+  directiveFnPath: null as ASTPath<Function>,
+  extraStmtToOnInit: [] as StatementKind[],
+  depParams: [] as Identifier[],
+  directiveExport: null as Collection<ExportNamedDeclaration>,
+  htmlReplaceVarNames: [] as string[],
+  templateNode: null as ASTPath<ObjectExpression>,
+  scopeNode: null as ObjectProperty,
+  isNotStringTmpl: true,
+};
 
-  const root = j(file.source) as MyCollection;
+export type FindResult = typeof defaultFindResults;
 
-  root.insertAtTheBegining(
-    'import { IComponentOptions, IController } from "angular";'
-  );
+function find(root: Collection, startPath: Collection) {
+  root.safeImportInsert(j.identifier("IController"), "angular");
+  root.safeImportInsert(j.identifier("IComponentOptions"), "angular");
 
-  const rootExports = root.find(j.ExportNamedDeclaration);
-
-  const tmpTemplateNode = rootExports
-    // Pierwsza eksportowana funkcja wcale nie musi być dyrektywą
-    // .at(0)
-    .find(j.Function)
-    .find(j.BlockStatement)
-    .find(j.ReturnStatement)
-    .find(j.ObjectExpression)
-    .find(j.ObjectProperty, {
-      key: { name: "template" },
-    })
-    .at(0);
-
-  if (!tmpTemplateNode) {
-    throw new TypeError("Directive without template");
-  }
-
-  const directiveObjectBlock: Collection = tmpTemplateNode.closest(
+  const directiveObjectBlock: Collection = startPath.closest(
     j.ObjectExpression
   );
 
@@ -181,30 +53,26 @@ export default function transformer(file: FileInfo, api: API) {
   const directiveFn: Collection<Function> = directiveOuterBlock.closest(
     j.Function
   );
-  const directiveExport: Collection = directiveFn.closest(
-    j.ExportNamedDeclaration
-  );
 
-  assertOne(directiveExport);
-  assertOne(directiveOuterBlock);
-  assertOne(directiveFn);
-
-  const dependencyParams: Identifier[] = directiveFn.get(0).node.params;
-
-  const htmlReplaceVarNames: string[] = [];
+  const results: FindResult = {
+    ...defaultFindResults,
+    templateNode: startPath.get(0).node,
+    depParams: directiveFn.get(0).node.params,
+    directiveExport: directiveFn.closest(j.ExportNamedDeclaration),
+  };
 
   directiveObjectBlock
     .find(j.MemberExpression, { object: { name: "$scope" } })
     .forEach((p: any) => {
-      return htmlReplaceVarNames.push(p.value.property.name);
+      return results.htmlReplaceVarNames.push(p.value.property.name);
     });
 
   directiveObjectBlock
     .find(j.MemberExpression, { object: { name: "scope" } })
     .forEach((p: any) => {
       const propertyName: string = p.value.property.name;
-      if (!htmlReplaceVarNames.includes(propertyName)) {
-        return htmlReplaceVarNames.push(propertyName);
+      if (!results.htmlReplaceVarNames.includes(propertyName)) {
+        return results.htmlReplaceVarNames.push(propertyName);
       }
     });
 
@@ -221,29 +89,29 @@ export default function transformer(file: FileInfo, api: API) {
     if (properties) {
       properties.forEach((p: any) => {
         const propertyName: string = p.key.name;
-        if (!htmlReplaceVarNames.includes(propertyName)) {
-          return htmlReplaceVarNames.push(propertyName);
+        if (!results.htmlReplaceVarNames.includes(propertyName)) {
+          return results.htmlReplaceVarNames.push(propertyName);
         }
       });
     }
   }
 
-  const templateNode = tmpTemplateNode.get(0).node;
-
   const ctrlFnProperty = directiveObjectBlock.find(j.ObjectProperty, {
     key: { name: "controller" },
   });
 
-  const ctrlFn = ctrlFnProperty.get(0).node.value;
-  ctrlFn.params.forEach((n: Identifier) => {
-    if (n.name !== "$scope") {
-      dependencyParams.push(n);
-    }
-  });
+  if (ctrlFnProperty.length) {
+    const ctrlFn = ctrlFnProperty.get(0).node.value;
+    ctrlFn.params.forEach((n: Identifier) => {
+      if (n.name !== "$scope") {
+        results.depParams.push(n);
+      }
+    });
 
-  const ctrlFnBodyBlock = j(ctrlFn.body);
+    results.ctrlFnBodyBlock = j(ctrlFn.body);
+  }
 
-  dependencyParams.forEach((param) => {
+  results.depParams.forEach((param) => {
     directiveOuterBlock
       .find(j.Identifier, {
         name: param.name,
@@ -251,13 +119,11 @@ export default function transformer(file: FileInfo, api: API) {
       .replaceWith((path) => j.memberExpression(j.thisExpression(), path.node));
   });
 
-  let linkFn = directiveObjectBlock.find(j.ObjectProperty, {
+  results.linkFn = directiveObjectBlock.find(j.ObjectProperty, {
     key: { name: "link" },
   });
 
-  let extraStmtToOnInit: any[] = [];
-
-  if (!linkFn.length) {
+  if (!results.linkFn.length) {
     const compileObject: Collection = directiveObjectBlock.find(
       j.ObjectProperty,
       {
@@ -270,60 +136,65 @@ export default function transformer(file: FileInfo, api: API) {
         .find(j.ExpressionStatement)
         .filter((p) => isDirectChildOf(compileBlock, p))
         .filter((p: ASTPath) => p.node.type !== j.ReturnStatement.toString());
-      extraStmtToOnInit = compileFunCollection.nodes();
+      results.extraStmtToOnInit = compileFunCollection.nodes();
       compileFunCollection
         .find(j.Identifier, { name: "attrs" })
         .replaceWith(j.identifier("this"));
     }
     const returnBlock = compileObject.find(j.ReturnStatement);
-    linkFn = returnBlock.find(j.ObjectProperty, {
+    results.linkFn = returnBlock.find(j.ObjectProperty, {
       key: { name: "post" },
     });
   }
 
-  linkFn
-    .find(j.Identifier, { name: "scope" })
-    .replaceWith(j.identifier("this"));
+  results.directiveFnPath = directiveFn.get(0);
+  results.scopeNode = scopeNode;
 
-  ctrlFnBodyBlock
-    .find(j.Identifier, { name: "$scope" })
-    .replaceWith(j.identifier("this"));
+  return results;
+}
 
-  let classPropertiesFromLinkFn: ClassProperty[] = [];
-  let linkNonFunExpressions: any[] = [];
-  if (isSingle(linkFn)) {
-    const linkFnBlock = linkFn.find(j.BlockStatement).at(0);
-    const linkFunExprs = scopeBlockFunExpressions(linkFnBlock);
-    linkNonFunExpressions = nonFunExpressionsInBlock(linkFnBlock);
-    classPropertiesFromLinkFn = convertToClassProperties(
-      linkFunExprs.funDeclars,
-      linkFunExprs.memberFunExprs,
-      linkFunExprs.memberArrowFunExprs
-    );
-  }
+function buildClass(results: typeof defaultFindResults) {
+  const {
+    linkFn,
+    ctrlFnBodyBlock,
+    directiveFnPath,
+    depParams,
+    extraStmtToOnInit,
+    directiveExport,
+    templateNode,
+    scopeNode,
+  } = results;
 
-  let classPropertiesFromCtrlFn: any = [];
-  let ctrlNonFunExpressions: any[] = [];
-  if (isSingle(ctrlFnBodyBlock)) {
-    const ctrlFunExprs = scopeBlockFunExpressions(ctrlFnBodyBlock);
-    ctrlNonFunExpressions = nonFunExpressionsInBlock(ctrlFnBodyBlock);
-    classPropertiesFromCtrlFn = convertToClassProperties(
-      ctrlFunExprs.funDeclars,
-      ctrlFunExprs.memberFunExprs,
-      ctrlFunExprs.memberArrowFunExprs
-    );
-  }
+  const {
+    methods: classPropertiesFromLinkFn,
+    statements: linkNonFunExpressions,
+  } = groupFunctionContent(linkFn);
 
-  const directeFnPath = directiveFn.get(0);
-  const tmpDirectiveName = directeFnPath.node.id
-    ? directiveFn.get(0).node.id.name
-    : directiveFn.get(0).parent.node.id.name;
+  const {
+    methods: classPropertiesFromCtrlFn,
+    statements: ctrlNonFunExpressions,
+  } = groupFunctionContent(ctrlFnBodyBlock);
+
+  linkFn &&
+    linkFn
+      .find(j.Identifier, { name: "scope" })
+      .replaceWith(j.thisExpression());
+
+  ctrlFnBodyBlock &&
+    ctrlFnBodyBlock
+      .find(j.Identifier, { name: "$scope" })
+      .replaceWith(j.thisExpression());
+
+  const tmpDirectiveName = directiveFnPath.node.id
+    ? directiveFnPath.node.id.name
+    : directiveFnPath.parent.node.id.name;
+
   const directiveName =
     tmpDirectiveName.indexOf("Directive") >= 0
       ? tmpDirectiveName.split("Directive")[0]
       : tmpDirectiveName;
   const compCtrlClassName: string = directiveName + "Controller";
-  const ctrorParams = dependencyParams.map((v) => {
+  const ctrorParams = depParams.map((v) => {
     const tsParam = j.tsParameterProperty(j.identifier(v.name));
     if (!v.typeAnnotation) {
       const typeAnnotationDepNameMap = {
@@ -359,7 +230,10 @@ export default function transformer(file: FileInfo, api: API) {
         j.functionExpression(
           null,
           [],
-          j.blockStatement([...extraStmtToOnInit, ...ctrlNonFunExpressions])
+          j.blockStatement([
+            ...extraStmtToOnInit,
+            ...(ctrlNonFunExpressions as any),
+          ])
         )
       ),
       j.methodDefinition(
@@ -368,7 +242,7 @@ export default function transformer(file: FileInfo, api: API) {
         j.functionExpression(
           null,
           [],
-          j.blockStatement([...linkNonFunExpressions])
+          j.blockStatement([...(linkNonFunExpressions as any)])
         )
       ),
       ...classPropertiesFromLinkFn,
@@ -380,11 +254,13 @@ export default function transformer(file: FileInfo, api: API) {
     j.classImplements(j.identifier("IController")),
   ];
 
-  const isNotStringTmpl =
+  results.isNotStringTmpl =
     templateNode.value.type !== j.StringLiteral.toString();
 
   const isIsolatedScope =
-    scopeNode && scopeNode.value && typeof scopeNode.value.value !== "boolean";
+    scopeNode &&
+    scopeNode.value &&
+    typeof (scopeNode.value as any).value !== "boolean";
   const componentDefObjectExpr: ObjectExpression = j.objectExpression([
     ...(isIsolatedScope
       ? [j.objectProperty(j.identifier("bindings"), scopeNode.value)]
@@ -411,74 +287,48 @@ export default function transformer(file: FileInfo, api: API) {
   directiveExport.insertBefore(compCtrlClassDec).insertAfter(compDef);
 
   directiveExport.remove();
+}
 
-  if (!!htmlReplaceVarNames.length && isNotStringTmpl) {
-    replaceHtmlVariables(htmlReplaceVarNames, file.path);
+export default function transformer(
+  fileInfo: FileInfo,
+  api: API,
+  options: Options
+) {
+  j = api.jscodeshift;
+  j.use(myPlugin);
+  const root = j(fileInfo.source);
+  const rootExports = root.find(j.ExportNamedDeclaration);
+
+  const initialPath = rootExports
+    // Pierwsza eksportowana funkcja wcale nie musi być dyrektywą
+    // .at(0)
+    .find(j.Function)
+    .find(j.BlockStatement)
+    .find(j.ReturnStatement)
+    .find(j.ObjectExpression)
+    .find(j.ObjectProperty);
+
+  const { beginCount, beginLn, mainPath } = initialConditions(
+    fileInfo,
+    root,
+    root.find(j.ObjectProperty, {
+      key: { name: "bindings" },
+    }),
+    initialPath
+  );
+  if (!mainPath) {
+    return;
   }
+
+  const results = find(root, initialPath);
+
+  buildClass(results);
+
+  if (!!results.htmlReplaceVarNames.length && results.isNotStringTmpl) {
+    replaceHtmlVariables(results.htmlReplaceVarNames, fileInfo.path);
+  }
+
+  assertCodeSize(beginLn, beginCount, j, root, options);
 
   return root.toSource();
-}
-
-function replaceHtmlVariables(tokens: string[], filePath: string) {
-  const tmpInFilePath = filePath.split(".").slice(0, -1).join(".") + ".html";
-  const tmpInFilePath2 = filePath.split(".").slice(0, -2).join(".") + ".html";
-  let htmlFilePath;
-
-  if (fileExists(tmpInFilePath)) {
-    htmlFilePath = tmpInFilePath;
-  } else if (fileExists(tmpInFilePath2)) {
-    htmlFilePath = tmpInFilePath2;
-  }
-  if (htmlFilePath) {
-    const root = HTMLParser(fs.readFileSync(htmlFilePath).toString());
-    const allElements = root.querySelectorAll("*");
-    tokens.forEach((token) => {
-      allElements.forEach((elem) => {
-        const attrEntries = Object.entries(elem.attrs);
-        const newToken = "$ctrl." + token;
-        for (let [key, value] of attrEntries) {
-          if (
-            value.includes(token) &&
-            !value.includes(newToken) &&
-            (!limitedAttrs[token] || limitedAttrs[token] === key) &&
-            token !== attrTokenEdgeCaseMap[key]
-          ) {
-            elem.setAttribute(key, replaceAll(value, token, newToken));
-          }
-        }
-        const textToReplace = elem.structuredText.trim();
-        if (
-          elem.childNodes.length === 1 &&
-          elem.firstChild.constructor.name === "TextNode" &&
-          textToReplace.includes(token) &&
-          !textToReplace.includes(newToken) &&
-          textToReplace.includes("{{")
-        ) {
-          const open = textToReplace.split("{{");
-          const close = open[1].split("}}");
-          const replaced = replaceAll(close[0], token, newToken);
-          elem.textContent = `${open[0]}{{ ${replaced} }}${close[1]}`;
-        }
-      });
-    });
-    fs.writeFileSync(htmlFilePath, root.outerHTML);
-  }
-}
-
-const attrTokenEdgeCaseMap = {
-  class: "label",
-  "ng-model": "controller",
-  "ng-if-inside": "id",
-};
-
-const limitedAttrs = {
-  id: "id",
-};
-
-function replaceAll(str: string, find: string, replace: string) {
-  return str.replace(new RegExp(escapeRegExp(find), "g"), replace);
-}
-
-function escapeRegExp(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
