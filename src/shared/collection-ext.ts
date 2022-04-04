@@ -1,10 +1,10 @@
-import { hasImportSpecifier } from "@codeshift/utils";
 import { Type } from "ast-types/lib/types";
 import j, {
   ASTNode,
   ASTPath,
   Collection,
   Identifier,
+  ImportSpecifier,
   JSCodeshift,
 } from "jscodeshift";
 
@@ -60,14 +60,21 @@ function directChildren<T>(ofType: Type<T>): Collection<T> {
   });
 }
 
-function safeImportInsert(id: Identifier, sourcePath: string) {
-  if (!hasImportSpecifier(j, this, id.name, sourcePath)) {
+function safeImportInsert(
+  specifier: ImportSpecifier[] | Identifier,
+  sourcePath: string
+) {
+  const resSpecifier: ImportSpecifier[] = Array.isArray(specifier)
+    ? specifier
+    : [j.importSpecifier(specifier as Identifier)];
+
+  if (
+    !this.find(j.ImportSpecifier, {
+      imported: { name: resSpecifier[0].imported.name },
+    }).length
+  ) {
     this.get().node.program.body.unshift(
-      j.importDeclaration(
-        [j.importSpecifier(id)],
-        j.literal(sourcePath),
-        "value"
-      )
+      j.importDeclaration(resSpecifier, j.literal(sourcePath), "value")
     );
   }
 }

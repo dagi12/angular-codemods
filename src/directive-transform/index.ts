@@ -13,7 +13,6 @@ import {
   ObjectProperty,
   Options,
 } from "jscodeshift";
-import "../../tutorial-toptal/shared/collection-ext";
 import { groupFunctionContent } from "../shared/class-builder";
 import { myPlugin } from "../shared/collection-ext";
 import {

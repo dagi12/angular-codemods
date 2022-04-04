@@ -1,4 +1,3 @@
-import { insertImportSpecifier } from "@codeshift/utils";
 import {
   API,
   ArrayExpression,
@@ -13,6 +12,7 @@ import {
   ObjectProperty,
   Options,
 } from "jscodeshift";
+import lodash from "lodash";
 import { myPlugin } from "../shared/collection-ext";
 import {
   assertCodeSize,
@@ -34,22 +34,29 @@ const defaultQueryResults = {
   configExprs: [] as ExpressionStatement[],
 };
 
-function queryForResults(root: Collection, moduleC: Collection) {
-  const queryResults = { ...defaultQueryResults };
+function find(root: Collection, moduleC: Collection) {
+  const queryResults = lodash.merge({}, defaultQueryResults);
 
   const routeConfig = root.find(j.FunctionDeclaration, {
     id: { name: "routeConfig" },
   });
 
-  routeConfig.length &&
-    root.safeImportInsert(j.identifier("StateProvider"), "@uirouter/angularjs");
-  insertImportSpecifier(
-    j,
-    root,
-    j.importSpecifier(j.identifier("NgModule")),
+  if (routeConfig.length) {
+    root.safeImportInsert(
+      [j.importSpecifier(j.identifier("StateProvider"))],
+      "@uirouter/angularjs"
+    );
+    const stateProv = j.identifier("$stateProvider");
+    stateProv.typeAnnotation = j.typeAnnotation(
+      j.genericTypeAnnotation(j.identifier("StateProvider"), null)
+    );
+    queryResults.configDeps.push(stateProv);
+  }
+
+  root.safeImportInsert(
+    [j.importSpecifier(j.identifier("NgModule"))],
     "angular-ts-decorators"
   );
-
   moduleC
     .find(j.CallExpression, {
       callee: {
@@ -205,10 +212,10 @@ export default function transformer(
     return;
   }
 
-  const { queryResults, routeConfig } = queryForResults(root, moduleC);
+  const { queryResults, routeConfig } = find(root, moduleC);
 
   moduleC.replaceWith((p) => buildClass(p, queryResults, routeConfig));
 
-  assertCodeSize(beginLn, beginCount, j, root, options);
+  assertCodeSize(beginCount, beginLn, j, root, options);
   return root.toSource();
 }

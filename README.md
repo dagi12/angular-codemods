@@ -27,7 +27,7 @@
 - does not match type array -> inserted at wrong place try parent
 - child node variables becomes undefined when parent is removed from ast tree
 - don't use `j.Decorator`, `j.Property`, `*Kind` types in `j.find` method
-- If there are duplicated replaces on multiple files check all global variables are deep cloned
+- If there are duplicated replaces when running against multiple files check all global variables are deep cloned
 
 ## Good practices
 
@@ -37,6 +37,8 @@
   - c - collection
   - p - nodepath
   - n - node
+- use forof instead foreach, differs collection from arrays,
+- on compliated mofications modify in place/create and remove nodes instead using `Collection.insert` and `Collection.replaceWith`
 
 ## Scripts
 
@@ -46,5 +48,5 @@ node node_modules/.bin/jscodeshift ./src/decorator-transform/**/*.directive.ts -
 ```
 
 ```sh
-find . -name "\*.module.ts" -exec sh -c 'cp "$1" /Users/erykmariankowski/programowanie/web/angular-codemods/src/module-transform' - '{}' \;
+find . -name "\*.module.ts" -exec sh -c 'cp "$1" /Users/erykmariankowski/programowanie/web/angular-codemods/src/decorator-transform' - '{}' \;
 ```

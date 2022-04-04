@@ -1,6 +1,6 @@
 import fs from "fs";
 import HTMLParser from "node-html-parser";
-import { fileExists } from "../../tutorial-toptal/shared/fs-util";
+import { fileExists } from "../shared/fs-util";
 
 export function replaceHtmlVariables(tokens: string[], filePath: string) {
   const tmpInFilePath = filePath.split(".").slice(0, -1).join(".") + ".html";

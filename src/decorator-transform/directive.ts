@@ -32,8 +32,11 @@ const defaultFindResults = {
   template: null as ObjectProperty[],
   scope: null as ObjectProperty[],
   require: null as ObjectProperty[],
-  transclue: null as ObjectProperty[],
+  transclude: null as ObjectProperty[],
   priority: null as ObjectProperty[],
+  bindToController: null as ObjectProperty[],
+  controllerAs: null as ObjectProperty[],
+  replace: null as ObjectProperty[],
 };
 
 export type FindResult = typeof defaultFindResults;
@@ -67,6 +70,7 @@ function find(j: JSCodeshift, root: Collection, startPath: Collection) {
     "priority",
     "replace",
     "bindToController",
+    "controllerAs",
   ]);
 
   const ctrlFnProperty = directiveObjectBlock.find(j.ObjectProperty, {
@@ -244,6 +248,10 @@ function buildClass(
             ...results.require,
             ...results.scope,
             ...results.template,
+            ...results.transclude,
+            ...results.bindToController,
+            ...results.priority,
+            ...results.replace,
           ]),
         ])
       ),

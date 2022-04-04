@@ -31,10 +31,22 @@
     {
       "type": "npm",
       "script": "directive-decorators",
-      "problemMatcher": [
-        "$tsc"
-      ],
-      "label": "npm: directive-decorators",
+      "problemMatcher": [],
+      "label": "npm: directive-decorators"
+    },
+    {
+      "type": "npm",
+      "script": "component-decorators",
+      "problemMatcher": [],
+      "label": "npm: component-decorators",
+      "detail": "node node_modules/.bin/jscodeshift ./src/app/**/*.component.ts -t ./src/decorator-transform/component.ts -p --extensions=\\*.ts --parser=ts"
+    },
+    {
+      "type": "npm",
+      "script": "module-decorators",
+      "problemMatcher": [],
+      "label": "npm: module-decorators",
+      "detail": "node node_modules/.bin/jscodeshift ./src/app/**/*.module.ts -t ./src/decorator-transform/module.ts --extensions=\\*.ts --parser=ts"
     }
   ]
 }

@@ -63,11 +63,11 @@ export const initialConditions = (
     console.log("Already transformed");
     return {};
   }
-  const mainPath = initialNode.at(0);
+  const mainPath = initialNode.at(-1);
   assertOne(mainPath, "Initial node not found");
 
   const beginLn = fileInfo.source.split(/\r\n|\r|\n/).length;
-  const beginCount = root.find(jscodeshift.Expression).length;
+  const beginCount = root.find(jscodeshift.Statement).length;
 
   return { mainPath, beginLn, beginCount };
 };
@@ -101,8 +101,7 @@ export function assertCodeSize(
   beforeLn: number,
   j: JSCodeshift,
   root: Collection,
-  options: any,
-  tolerance = 20
+  options: any
 ) {
   // programing mode
   if (
@@ -112,20 +111,20 @@ export function assertCodeSize(
   ) {
     return;
   }
-  const endCount = root.find(j.Expression).length;
+  const endCount = root.find(j.Statement).length;
   const endSrc = root.toSource();
   const endLn = endSrc.split(/\r\n|\r|\n/).length;
   if (!beforeCount || !endCount) {
     console.error(endSrc);
     throw new Error("Plik bez ekspresji");
-  } else if (beforeCount - tolerance > endCount) {
+  } else if (beforeCount - 15 > endCount) {
     console.error(endSrc);
     throw new Error(`Zgubiono expression przed ${beforeCount} po: ${endCount}`);
   }
   if (!beforeLn || !endLn) {
     console.error(endSrc);
     throw new Error("Plik bez ekspresji");
-  } else if (beforeLn - tolerance > endLn) {
+  } else if (beforeLn - 15 > endLn) {
     console.error(endSrc);
     throw new Error(`Zgubionono linie przed ${beforeLn} po: ${endLn}`);
   }

@@ -5,16 +5,17 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "All directive decorator transform",
+      "name": "Component decorator transform",
       "request": "launch",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
       "args": [
+        "-p",
         "-d",
         "-t",
-        "src/decorator-transform/directive.ts",
+        "src/decorator-transform/component.ts",
         "--extensions=ts",
         "--parser=ts",
         "${file}"
@@ -55,7 +56,7 @@
         "-d",
         "-p",
         "-t",
-        "src/module-transform/index.ts",
+        "src/decorator-transform/module.ts",
         "--extensions=ts",
         "--parser=ts",
         "${file}"
