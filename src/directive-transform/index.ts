@@ -13,14 +13,14 @@ import {
   ObjectProperty,
   Options,
 } from "jscodeshift";
-import { groupFunctionContent } from "../../tutorial-toptal/shared/class-builder";
 import "../../tutorial-toptal/shared/collection-ext";
-import { myPlugin } from "../../tutorial-toptal/shared/collection-ext";
+import { groupFunctionContent } from "../shared/class-builder";
+import { myPlugin } from "../shared/collection-ext";
 import {
   assertCodeSize,
   initialConditions,
   isDirectChildOf,
-} from "../../tutorial-toptal/shared/search-util";
+} from "../shared/search-util";
 import { replaceHtmlVariables } from "./html";
 
 let j: JSCodeshift;

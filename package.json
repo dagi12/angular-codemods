@@ -8,7 +8,7 @@
     "transform-modules": "jscodeshift -t ./angular-module-exports/transformer.js ./angular-module-exports/examples/basic; jscodeshift -t ./angular-module-exports/transformer2.js ./angular-module-exports/examples/basic -c 1",
     "directive-transform": "jscodeshift -p -t ./angular-module-exports/directive-transformer.ts ./angular-module-exports/examples/user-rights-checkboxes.directive.ts",
     "modules": "node_modules/.bin/jscodeshift ./src/module-transform/**/*.ts -t src/module-transform/index.ts --extensions=*.ts --parser=ts -p -v 1 > jscodeshift.log",
-    "directive-decorators": "node_modules/.bin/jscodeshift ./src/app/**/*.directive.ts -t ./src/decorator-transform/directive.ts --extensions=*.directive.ts --parser=ts --run-in-band -c 1",
+    "directive-decorators": "node node_modules/.bin/jscodeshift ./src/app/**/*.directive.ts -t ./src/decorator-transform/directive.ts -p --extensions=\\*.ts --parser=ts",
     "module-decorators": "node_modules/.bin/jscodeshift ./src/app/**/*.module.ts -t ./src/module-transform/index.ts --extensions=*.ts --parser=ts",
     "component-decorators": "node_modules/.bin/jscodeshift ./src/app/**/*.directive.ts -t ./src/decorator-transform/component.ts --extensions=*.ts --parser=ts"
   },

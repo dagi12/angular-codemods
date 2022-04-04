@@ -5,6 +5,24 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "All directive decorator transform",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "./node_modules/jscodeshift/bin/jscodeshift.sh",
+      "args": [
+        "-d",
+        "-t",
+        "src/decorator-transform/directive.ts",
+        "--extensions=ts",
+        "--parser=ts",
+        "${file}"
+      ],
+      "type": "pwa-node",
+      "outputCapture": "std"
+    },
+    {
       "name": "Decorator file transform",
       "request": "launch",
       "skipFiles": [

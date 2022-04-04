@@ -102,7 +102,7 @@ export function assertCodeSize(
   j: JSCodeshift,
   root: Collection,
   options: any,
-  tolerance = 30
+  tolerance = 20
 ) {
   // programing mode
   if (
@@ -116,13 +116,14 @@ export function assertCodeSize(
   const endSrc = root.toSource();
   const endLn = endSrc.split(/\r\n|\r|\n/).length;
   if (!beforeCount || !endCount) {
+    console.error(endSrc);
     throw new Error("Plik bez ekspresji");
   } else if (beforeCount - tolerance > endCount) {
-    throw new Error(
-      `Zgubionono expression przed ${beforeCount} po: ${endCount}`
-    );
+    console.error(endSrc);
+    throw new Error(`Zgubiono expression przed ${beforeCount} po: ${endCount}`);
   }
   if (!beforeLn || !endLn) {
+    console.error(endSrc);
     throw new Error("Plik bez ekspresji");
   } else if (beforeLn - tolerance > endLn) {
     console.error(endSrc);
@@ -149,4 +150,8 @@ export function reassignForBuilder<T extends ASTNode>(
     } as any);
     results[s] = c && c.length ? c.nodes() : [];
   });
+}
+
+export function deepClone<T>(clone: T) {
+  return JSON.parse(JSON.stringify(clone));
 }

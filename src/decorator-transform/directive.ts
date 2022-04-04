@@ -1,5 +1,5 @@
 import { StatementKind } from "ast-types/gen/kinds";
-import jscodeshift, {
+import {
   API,
   ASTPath,
   BlockStatement,
@@ -12,7 +12,7 @@ import jscodeshift, {
   ObjectProperty,
   Options,
 } from "jscodeshift";
-import lodash from "lodash";
+import { default as loadash, default as lodash } from "lodash";
 import "../shared/collection-ext";
 import { myPlugin } from "../shared/collection-ext";
 import {
@@ -22,8 +22,6 @@ import {
   pushUnique,
   reassignForBuilder,
 } from "../shared/search-util";
-
-let j: JSCodeshift = jscodeshift;
 
 const defaultFindResults = {
   linkFn: null as Collection<ObjectProperty>,
@@ -40,7 +38,7 @@ const defaultFindResults = {
 
 export type FindResult = typeof defaultFindResults;
 
-function find(root: Collection, startPath: Collection) {
+function find(j: JSCodeshift, root: Collection, startPath: Collection) {
   root.safeImportInsert(j.identifier("OnInit"), "angular-ts-decorators");
   root.safeImportInsert(j.identifier("Directive"), "angular-ts-decorators");
   root.safeImportInsert(j.identifier("ViewParent"), "angular-ts-decorators");
@@ -57,9 +55,7 @@ function find(root: Collection, startPath: Collection) {
     j.Function
   );
 
-  const results: FindResult = {
-    ...defaultFindResults,
-  };
+  const results: FindResult = loadash.merge({}, defaultFindResults);
 
   results.directiveFn = directiveFn;
 
@@ -117,17 +113,22 @@ function find(root: Collection, startPath: Collection) {
   if (results.linkFn.length) {
     if (!results.depParams.some((v) => v.name === "$attrs")) {
       results.depParams.push(j.identifier("$attrs"));
-    } else if (!results.depParams.some((v) => v.name === "$element")) {
+    }
+    if (!results.depParams.some((v) => v.name === "$element")) {
       results.depParams.push(j.identifier("$element"));
+    }
+    if (!results.depParams.some((v) => v.name === "$scope")) {
+      results.depParams.push(j.identifier("$scope"));
     }
   }
 
-  renameMembers(directiveObjectBlock, results, directiveOuterBlock);
+  renameMembers(j, directiveObjectBlock, results, directiveOuterBlock);
 
   return results;
 }
 
 function renameMembers(
+  j: JSCodeshift,
   directiveObjectBlock: Collection<any>,
   results: FindResult,
   directiveOuterBlock: Collection<BlockStatement>
@@ -152,7 +153,10 @@ function renameMembers(
     .replaceWith((path) => j.memberExpression(j.thisExpression(), path.node));
 }
 
-function buildClass(results: Partial<typeof defaultFindResults>) {
+function buildClass(
+  j: JSCodeshift,
+  results: Partial<typeof defaultFindResults>
+) {
   const { linkFn, ctrlFnBodyBlock, depParams, extraStmtToOnInit } = results;
 
   const directiveFnPath = results.directiveFn.get(0);
@@ -254,7 +258,7 @@ export default function transformer(
   api: API,
   options: Options
 ) {
-  j = api.jscodeshift;
+  const j = api.jscodeshift;
   j.use(myPlugin);
   const root = j(fileInfo.source);
 
@@ -283,11 +287,13 @@ export default function transformer(
     return;
   }
 
-  const results = find(root, initialPath);
+  const results = find(j, root, initialPath);
 
-  buildClass(results);
+  buildClass(j, results);
 
   assertCodeSize(beginCount, beginLn, j, root, options);
 
   return root.toSource();
 }
+
+// FIXME wyszukaj pozostałe dyrektywy i przepisz ręcznie

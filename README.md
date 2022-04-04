@@ -27,7 +27,7 @@
 - does not match type array -> inserted at wrong place try parent
 - child node variables becomes undefined when parent is removed from ast tree
 - don't use `j.Decorator`, `j.Property`, `*Kind` types in `j.find` method
-- To run multiple files open bash run `shopt -s globstar && yarn run modules`
+- If there are duplicated replaces on multiple files check all global variables are deep cloned
 
 ## Good practices
 
@@ -40,8 +40,9 @@
 
 ## Scripts
 
-```bash
-shopt -s globstar && node_modules/.bin/jscodeshift ./src/decorator-transform/**/*.directive.ts -t ./src/decorator-transform/directive.ts --extensions=*.ts --parser=ts
+```sh
+setopt globstar
+node node_modules/.bin/jscodeshift ./src/decorator-transform/**/*.directive.ts -t ./src/decorator-transform/directive.ts --extensions=*.ts --parser=ts
 ```
 
 ```sh
